@@ -1,0 +1,1 @@
+{"version":3,"file":"moobius-api-sdk.js","sources":["../src/index.ts"],"sourcesContent":["console.log('test');\nconsole.log(111);\n\nexport default {};\n"],"names":[],"mappings":";;;;;;;CAAA,OAAO,CAAC,GAAG,CAAC,MAAM,CAAC,CAAC;CACpB,OAAO,CAAC,GAAG,CAAC,GAAG,CAAC,CAAC;AACjB;AACA,aAAe,EAAE;;;;;;;;"}
