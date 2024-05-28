@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+      "module": "ESNext",
+      "lib": ["dom", "es2015"],
+      "types": [],
+      "rootDir": "src",
+      "strict": true,
+      "noEmit": true
+    }
+  }
+  
