@@ -1,11 +1,18 @@
 {
-    "compilerOptions": {
-      "module": "ESNext",
-      "lib": ["dom", "es2015"],
-      "types": [],
-      "rootDir": "src",
-      "strict": true,
-      "noEmit": true
+  "compilerOptions": {
+    "sourceMap": true,
+    "target": "ES5",
+    "module": "ESNext",
+    "noEmitOnError": true,
+    "lib": ["ESNext", "DOM"],
+    "strict": true,
+    "rootDir": "./src",
+    "allowJs": true,
+    "noImplicitAny": true,
+    "outDir": "./dist",
+    "paths": {
+      "@/*": ["./src/*"]
     }
-  }
-  
+  },
+  "include": ["./src/**/*.ts"]
+}

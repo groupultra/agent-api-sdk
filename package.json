@@ -9,11 +9,12 @@
     "build": "cross-env NODE_ENV=production rollup -c -m",
     "prettier:fix": "prettier src --check --write",
     "lint": "eslint .",
-    "fix": "npm run prettier:fix && npm run lint"
+    "fix": "npm run prettier:fix && npm run lint",
+    "start": "node ./sandbox/server.js"
   },
   "devDependencies": {
-    "@babel/core": "^7.23.9",
-    "@babel/preset-env": "^7.23.9",
+    "@babel/core": "^7.24.6",
+    "@babel/preset-env": "^7.24.6",
     "@commitlint/cli": "^17.8.1",
     "@commitlint/config-conventional": "^17.8.1",
     "@rollup/plugin-alias": "^5.1.0",
@@ -52,8 +53,13 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@babel/preset-typescript": "^7.24.6",
+    "@rollup/plugin-typescript": "^11.1.6",
     "@types/node": "^20.12.12",
+    "@types/uuid": "^9.0.8",
+    "@types/ws": "^8.5.10",
     "axios": "^1.7.2",
+    "uuid": "^9.0.1",
     "ws": "^8.17.0"
   }
 }

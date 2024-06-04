@@ -3,10 +3,12 @@ import { babel } from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
 import path from 'path';
 import autoExternal from 'rollup-plugin-auto-external';
 import bundleSize from 'rollup-plugin-bundle-size';
 import { terser } from 'rollup-plugin-terser';
+import { fileURLToPath } from 'url';
 
 const lib = require('./package.json');
 const outputFileName = 'moobius-api-sdk';
@@ -36,8 +38,18 @@ const buildConfig = ({
     },
     plugins: [
       aliasPlugin({
-        entries: alias || [],
+        entries: [
+          {
+            find: '@',
+            replacement: path.resolve(
+              path.dirname(fileURLToPath(import.meta.url)),
+              'src',
+            ),
+          },
+          ...(alias || []),
+        ],
       }),
+      typescript({ tsconfig: './tsconfig.json' }),
       json(),
       resolve({ browser }),
       commonjs(),
@@ -52,6 +64,7 @@ const buildConfig = ({
             }),
           ]
         : []),
+
       ...(config.plugins || []),
     ],
   });
@@ -102,7 +115,12 @@ export default async () => {
         exports: 'default',
         banner,
       },
-      plugins: [autoExternal(), resolve(), commonjs()],
+      plugins: [
+        typescript({ tsconfig: './tsconfig.json' }),
+        autoExternal(),
+        resolve(),
+        commonjs(),
+      ],
     },
   ];
 };

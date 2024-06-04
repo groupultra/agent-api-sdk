@@ -1,13 +1,5 @@
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
-import { toast } from 'react-toastify';
-
-import { captureHttpSentry } from '@/lib/sentry';
-import type { Store } from '@/store';
-// eslint-disable-next-line import/no-cycle
-import { getStore } from '@/store';
-// eslint-disable-next-line import/no-cycle
-import type { UserToken } from '@/store/modules/user';
 
 export const SUCCESS_CODE = 10000;
 export const AUTHERROT_CODE = 10005;
@@ -58,16 +50,15 @@ class Axios {
   }
 
   private async handleSuccessRequeset(config: IRequestOptions) {
-    const store: Store = getStore()!;
     const { ignoreAuth = false } = config;
     if (!ignoreAuth) {
-      const userInfo = (await store.userlocalForage.getItem(
-        'userToken',
-      )) as UserToken;
-      config.headers.Authorization =
-        `${userInfo?.TokenType} ${userInfo?.AccessToken}` || ``;
-      config.headers['Auth-Origin'] =
-        await store.userlocalForage.getItem('loginType');
+      // const userInfo = (await store.userlocalForage.getItem(
+      //   'userToken',
+      // )) as UserToken;
+      // config.headers.Authorization =
+      //   `${userInfo?.TokenType} ${userInfo?.AccessToken}` || ``;
+      // config.headers['Auth-Origin'] =
+      //   await store.userlocalForage.getItem('loginType');
     }
     return config;
   }
@@ -116,53 +107,44 @@ class Axios {
         });
       });
     }
-    toast.error(`
+    console.error(`
       ${response.config.url!} : 
       ${response?.data?.message || response?.data?.data || '请求失败'}
     `);
-    captureHttpSentry({
-      url: response.config.url!,
-      method: response.config.method!,
-      status: response.data.code,
-      statusText: response.data.msg,
-    });
     return Promise.reject(response);
   };
 
   private handleErrorResponse = (error: any) => {
     if (error.code === 'ECONNABORTED') {
-      toast.error(
+      console.error(
         `
         ${error.config.url!} : 
         ${error.message}
       `,
         {
           onClose: () => {
-            window.location.reload();
+            console.log('resend');
           },
         },
       );
     } else {
-      toast.error(
+      console.error(
         `
         ${error.config.url!} : 
         ${error.message}
       `,
       );
     }
-    captureHttpSentry({
-      url: error.config.url!,
-      method: error.config.method!,
-      status: error.code,
-      statusText: error.msg,
-    });
     return Promise.reject(error);
   };
 
   private refreshToken(): Promise<any> {
-    const store: Store = getStore()!;
-    // 发起请求刷新token
-    return store.user.fetchRefresh();
+    // const store: Store = getStore()!;
+    // // 发起请求刷新token
+    // return store.user.fetchRefresh();
+    return new Promise(() => {
+      console.log('refresh token');
+    });
   }
 
   private subscribeTokenRefresh(callback: (token: string) => void) {
