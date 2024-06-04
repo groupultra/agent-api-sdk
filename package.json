@@ -2,6 +2,18 @@
   "name": "agent-api-sdk",
   "version": "1.0.0",
   "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": {
+        "require": "./src/index.d.ts",
+        "default": "./src/index.d.ts"
+      },
+      "default": {
+        "require": "./dist/node/moobius-api-sdk.cjs",
+        "default": "./dist/moobius-api-sdk.js"
+      }
+    }
+  },
   "repository": "https://github.com/groupultra/agent-api-sdk.git",
   "author": "moobius",
   "type": "module",
@@ -10,7 +22,8 @@
     "prettier:fix": "prettier src --check --write",
     "lint": "eslint .",
     "fix": "npm run prettier:fix && npm run lint",
-    "start": "node ./sandbox/server.js"
+    "start:client": "node ./sandbox/server.js",
+    "start:node": "node ./sandbox/node-agent.js"
   },
   "devDependencies": {
     "@babel/core": "^7.24.6",

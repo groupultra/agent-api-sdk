@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 
 const lib = require('./package.json');
 const outputFileName = 'moobius-api-sdk';
-const name = 'moobius-api-sdk';
+const name = 'moobiusSdk';
 const namedInput = './src/index.ts';
 const defaultInput = './src/index.ts';
 
@@ -109,7 +109,7 @@ export default async () => {
     {
       input: defaultInput,
       output: {
-        file: `dist/node/${name}.cjs`,
+        file: `dist/node/${outputFileName}.cjs`,
         format: 'cjs',
         preferConst: true,
         exports: 'default',

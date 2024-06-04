@@ -1,26 +1,19 @@
-import { bind, extend, mergeDeep } from '@/utils';
-class MoobiusApi {
-  constructor(config: any) {
-    console.log(config);
-  }
-  request() {}
-}
+import type { MoobiusBasicConfig } from '@/index.d';
+import { bind, extend } from '@/utils/index';
+import MoobiusSDK from './core/Moobius';
+function createInstance(defaultConfig: MoobiusBasicConfig) {
+  const context = new MoobiusSDK(defaultConfig);
+  const instance = bind(MoobiusSDK.prototype.init, context);
 
-function createInstance(defaultConfig: any) {
-  const context = new MoobiusApi(defaultConfig);
-  const instance: any = bind(MoobiusApi.prototype.request, context);
-
-  extend(instance, MoobiusApi.prototype, context, { allOwnKeys: true });
+  extend(instance, MoobiusSDK.prototype, context, { allOwnKeys: true });
 
   extend(instance, context, null, { allOwnKeys: true });
-
-  instance.create = function create(instanceConfig: any) {
-    return createInstance(mergeDeep(defaultConfig, instanceConfig));
-  };
-
   return instance;
 }
-const defaults = {};
-const moobius_api_agent = createInstance(defaults);
 
-export default moobius_api_agent;
+const defaults = {
+  url: 'https://api.moobius.net',
+};
+
+const moobiusSDk = createInstance(defaults);
+export default moobiusSDk;

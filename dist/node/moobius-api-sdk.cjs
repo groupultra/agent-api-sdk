@@ -116,25 +116,29 @@ var extend = function (a, b, thisArg, _a) {
     return a;
 };
 
-var MoobiusApi = /** @class */ (function () {
-    function MoobiusApi(config) {
-        console.log(config);
+var MoobiusSDK = /** @class */ (function () {
+    function MoobiusSDK(instanceConfig) {
+        this.defaults = instanceConfig;
+        this.config = instanceConfig;
     }
-    MoobiusApi.prototype.request = function () { };
-    return MoobiusApi;
-}());
-function createInstance(defaultConfig) {
-    var context = new MoobiusApi(defaultConfig);
-    var instance = bind(MoobiusApi.prototype.request, context);
-    extend(instance, MoobiusApi.prototype, context, { allOwnKeys: true });
-    extend(instance, context, null, { allOwnKeys: true });
-    instance.create = function create(instanceConfig) {
-        return createInstance(mergeDeep(defaultConfig, instanceConfig));
+    MoobiusSDK.prototype.init = function (config) {
+        this.config = mergeDeep(this.defaults, config);
+        console.log('init', this.config);
     };
+    return MoobiusSDK;
+}());
+
+function createInstance(defaultConfig) {
+    var context = new MoobiusSDK(defaultConfig);
+    var instance = bind(MoobiusSDK.prototype.init, context);
+    extend(instance, MoobiusSDK.prototype, context, { allOwnKeys: true });
+    extend(instance, context, null, { allOwnKeys: true });
     return instance;
 }
-var defaults = {};
-var moobius_api_agent = createInstance(defaults);
+var defaults = {
+    url: 'https://api.moobius.net',
+};
+var moobiusSDk = createInstance(defaults);
 
-module.exports = moobius_api_agent;
+module.exports = moobiusSDk;
 //# sourceMappingURL=moobius-api-sdk.cjs.map

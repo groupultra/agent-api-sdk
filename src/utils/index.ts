@@ -1,4 +1,4 @@
-export function bind(fn: () => void, thisArg: any) {
+export function bind(fn: any, thisArg: any) {
   return function wrap(...arg: any) {
     return fn.apply(thisArg, arg);
   };
