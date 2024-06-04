@@ -4026,6 +4026,11 @@ split2@^3.0.0, split2@^3.2.2:
   dependencies:
     readable-stream "^3.0.0"
 
+store2@^2.14.3:
+  version "2.14.3"
+  resolved "https://registry.yarnpkg.com/store2/-/store2-2.14.3.tgz#24077d7ba110711864e4f691d2af941ec533deb5"
+  integrity sha512-4QcZ+yx7nzEFiV4BMLnr/pRa5HYzNITX2ri0Zh6sT9EyQHbBHacC6YigllUPU9X3D0f/22QCgfokpKs52YRrUg==
+
 string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"

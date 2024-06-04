@@ -1,6 +1,12 @@
 // Moobius-js-api-sdk v1.0.0 Copyright (c) 2024 moobius and contributors
 'use strict';
 
+const store = require('store2');
+
+function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+
+const store__default = /*#__PURE__*/_interopDefaultLegacy(store);
+
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -116,6 +122,40 @@ var extend = function (a, b, thisArg, _a) {
     return a;
 };
 
+var StoreWithExpiry = /** @class */ (function () {
+    function StoreWithExpiry() {
+    }
+    StoreWithExpiry.prototype.set = function (key, value, ttl) {
+        if (ttl === void 0) { ttl = 3600 * 1000; }
+        var now = new Date();
+        var item = {
+            value: value,
+            expiry: now.getTime() + ttl,
+        };
+        store__default["default"].set(key, item);
+    };
+    StoreWithExpiry.prototype.get = function (key) {
+        var item = store__default["default"].get(key);
+        if (!item) {
+            return null;
+        }
+        var now = new Date();
+        if (now.getTime() > item.expiry) {
+            store__default["default"].remove(key);
+            return null;
+        }
+        return item.value;
+    };
+    StoreWithExpiry.prototype.remove = function (key) {
+        store__default["default"].remove(key);
+    };
+    StoreWithExpiry.prototype.clearAll = function () {
+        store__default["default"].clearAll();
+    };
+    return StoreWithExpiry;
+}());
+var storeWithExpiry = new StoreWithExpiry();
+
 var MoobiusSDK = /** @class */ (function () {
     function MoobiusSDK(instanceConfig) {
         this.defaults = instanceConfig;
@@ -124,6 +164,8 @@ var MoobiusSDK = /** @class */ (function () {
     MoobiusSDK.prototype.init = function (config) {
         this.config = mergeDeep(this.defaults, config);
         console.log('init', this.config);
+        storeWithExpiry.set('test', 'hhhhh', 100000);
+        console.log(storeWithExpiry.get('test'));
     };
     return MoobiusSDK;
 }());
