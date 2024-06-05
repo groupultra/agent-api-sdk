@@ -1,538 +1,584 @@
 // Moobius-js-api-sdk v1.0.0 Copyright (c) 2024 moobius and contributors
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  typeof define === 'function' && define.amd ? define(factory) :
-  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.moobiusSdk = factory());
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.moobiusSdk = factory());
 })(this, (function () { 'use strict';
 
-  function _typeof(o) {
-    "@babel/helpers - typeof";
-
-    return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) {
-      return typeof o;
-    } : function (o) {
-      return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
-    }, _typeof(o);
-  }
-
-  function __spreadArray(to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-      if (ar || !(i in from)) {
-        if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-        ar[i] = from[i];
+    function __awaiter(thisArg, _arguments, P, generator) {
+      function adopt(value) {
+        return value instanceof P ? value : new P(function (resolve) {
+          resolve(value);
+        });
+      }
+      return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) {
+          try {
+            step(generator.next(value));
+          } catch (e) {
+            reject(e);
+          }
+        }
+        function rejected(value) {
+          try {
+            step(generator["throw"](value));
+          } catch (e) {
+            reject(e);
+          }
+        }
+        function step(result) {
+          result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+        }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+      });
+    }
+    function __generator(thisArg, body) {
+      var _ = {
+          label: 0,
+          sent: function sent() {
+            if (t[0] & 1) throw t[1];
+            return t[1];
+          },
+          trys: [],
+          ops: []
+        },
+        f,
+        y,
+        t,
+        g;
+      return g = {
+        next: verb(0),
+        "throw": verb(1),
+        "return": verb(2)
+      }, typeof Symbol === "function" && (g[Symbol.iterator] = function () {
+        return this;
+      }), g;
+      function verb(n) {
+        return function (v) {
+          return step([n, v]);
+        };
+      }
+      function step(op) {
+        if (f) throw new TypeError("Generator is already executing.");
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+          if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+          if (y = 0, t) op = [op[0] & 2, t.value];
+          switch (op[0]) {
+            case 0:
+            case 1:
+              t = op;
+              break;
+            case 4:
+              _.label++;
+              return {
+                value: op[1],
+                done: false
+              };
+            case 5:
+              _.label++;
+              y = op[1];
+              op = [0];
+              continue;
+            case 7:
+              op = _.ops.pop();
+              _.trys.pop();
+              continue;
+            default:
+              if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) {
+                _ = 0;
+                continue;
+              }
+              if (op[0] === 3 && (!t || op[1] > t[0] && op[1] < t[3])) {
+                _.label = op[1];
+                break;
+              }
+              if (op[0] === 6 && _.label < t[1]) {
+                _.label = t[1];
+                t = op;
+                break;
+              }
+              if (t && _.label < t[2]) {
+                _.label = t[2];
+                _.ops.push(op);
+                break;
+              }
+              if (t[2]) _.ops.pop();
+              _.trys.pop();
+              continue;
+          }
+          op = body.call(thisArg, _);
+        } catch (e) {
+          op = [6, e];
+          y = 0;
+        } finally {
+          f = t = 0;
+        }
+        if (op[0] & 5) throw op[1];
+        return {
+          value: op[0] ? op[1] : void 0,
+          done: true
+        };
       }
     }
-    return to.concat(ar || Array.prototype.slice.call(from));
-  }
-  typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-    var e = new Error(message);
-    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-  };
-
-  function bind(fn, thisArg) {
-      return function wrap() {
-          var arg = [];
-          for (var _i = 0; _i < arguments.length; _i++) {
-              arg[_i] = arguments[_i];
-          }
-          return fn.apply(thisArg, arg);
-      };
-  }
-  var typeOfTest = function (type) { return function (thing) { return typeof thing === type; }; };
-  var isArray = Array.isArray;
-  var isFunction = typeOfTest('function');
-  function isObject(item) {
-      return item && typeof item === 'object' && !Array.isArray(item);
-  }
-  function mergeDeep(target) {
-      var _a, _b;
-      var sources = [];
-      for (var _i = 1; _i < arguments.length; _i++) {
-          sources[_i - 1] = arguments[_i];
-      }
-      if (!sources.length)
-          return target;
-      var source = sources.shift();
-      if (isObject(target) && isObject(source)) {
-          for (var key in source) {
-              if (source.hasOwnProperty(key)) {
-                  if (isObject(source[key])) {
-                      if (!target[key])
-                          Object.assign(target, (_a = {}, _a[key] = {}, _a));
-                      mergeDeep(target[key], source[key]);
-                  }
-                  else {
-                      Object.assign(target, (_b = {}, _b[key] = source[key], _b));
-                  }
-              }
-          }
-      }
-      return mergeDeep.apply(void 0, __spreadArray([target], sources, false));
-  }
-  function forEach(obj, fn, _a) {
-      var _b = _a === void 0 ? {} : _a, _c = _b.allOwnKeys, allOwnKeys = _c === void 0 ? false : _c;
-      // Don't bother if no value provided
-      if (obj === null || typeof obj === 'undefined') {
-          return;
-      }
-      var i;
-      var l;
-      // Force an array if not already something iterable
-      if (typeof obj !== 'object') {
-          /*eslint no-param-reassign:0*/
-          obj = [obj];
-      }
-      if (isArray(obj)) {
-          // Iterate over array values
-          for (i = 0, l = obj.length; i < l; i++) {
-              fn.call(null, obj[i], i, obj);
-          }
-      }
-      else {
-          // Iterate over object keys
-          var keys = allOwnKeys
-              ? Object.getOwnPropertyNames(obj)
-              : Object.keys(obj);
-          var len = keys.length;
-          var key = void 0;
-          for (i = 0; i < len; i++) {
-              key = keys[i];
-              fn.call(null, obj[key], key, obj);
-          }
-      }
-  }
-  var extend = function (a, b, thisArg, _a) {
-      var _b = _a === void 0 ? { allOwnKeys: false } : _a, allOwnKeys = _b.allOwnKeys;
-      forEach(b, function (val, key) {
-          if (thisArg && isFunction(val)) {
-              a[key] = bind(val, thisArg);
-          }
-          else {
-              a[key] = val;
-          }
-      }, { allOwnKeys: allOwnKeys });
-      return a;
-  };
-
-  var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-  function createCommonjsModule(fn, basedir, module) {
-  	return module = {
-  		path: basedir,
-  		exports: {},
-  		require: function (path, base) {
-  			return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
-  		}
-  	}, fn(module, module.exports), module.exports;
-  }
-
-  function commonjsRequire () {
-  	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
-  }
-
-  var store2 = createCommonjsModule(function (module) {
-    (function (window, define) {
-      var _ = {
-        version: "2.14.3",
-        areas: {},
-        apis: {},
-        nsdelim: '.',
-        // utilities
-        inherit: function inherit(api, o) {
-          for (var p in api) {
-            if (!o.hasOwnProperty(p)) {
-              Object.defineProperty(o, p, Object.getOwnPropertyDescriptor(api, p));
-            }
-          }
-          return o;
-        },
-        stringify: function stringify(d, fn) {
-          return d === undefined || typeof d === "function" ? d + '' : JSON.stringify(d, fn || _.replace);
-        },
-        parse: function parse(s, fn) {
-          // if it doesn't parse, return as is
-          try {
-            return JSON.parse(s, fn || _.revive);
-          } catch (e) {
-            return s;
-          }
-        },
-        // extension hooks
-        fn: function fn(name, _fn) {
-          _.storeAPI[name] = _fn;
-          for (var api in _.apis) {
-            _.apis[api][name] = _fn;
-          }
-        },
-        get: function get(area, key) {
-          return area.getItem(key);
-        },
-        set: function set(area, key, string) {
-          area.setItem(key, string);
-        },
-        remove: function remove(area, key) {
-          area.removeItem(key);
-        },
-        key: function key(area, i) {
-          return area.key(i);
-        },
-        length: function length(area) {
-          return area.length;
-        },
-        clear: function clear(area) {
-          area.clear();
-        },
-        // core functions
-        Store: function Store(id, area, namespace) {
-          var store = _.inherit(_.storeAPI, function (key, data, overwrite) {
-            if (arguments.length === 0) {
-              return store.getAll();
-            }
-            if (typeof data === "function") {
-              return store.transact(key, data, overwrite);
-            } // fn=data, alt=overwrite
-            if (data !== undefined) {
-              return store.set(key, data, overwrite);
-            }
-            if (typeof key === "string" || typeof key === "number") {
-              return store.get(key);
-            }
-            if (typeof key === "function") {
-              return store.each(key);
-            }
-            if (!key) {
-              return store.clear();
-            }
-            return store.setAll(key, data); // overwrite=data, data=key
-          });
-          store._id = id;
-          try {
-            var testKey = '__store2_test';
-            area.setItem(testKey, 'ok');
-            store._area = area;
-            area.removeItem(testKey);
-          } catch (e) {
-            store._area = _.storage('fake');
-          }
-          store._ns = namespace || '';
-          if (!_.areas[id]) {
-            _.areas[id] = store._area;
-          }
-          if (!_.apis[store._ns + store._id]) {
-            _.apis[store._ns + store._id] = store;
-          }
-          return store;
-        },
-        storeAPI: {
-          // admin functions
-          area: function area(id, _area) {
-            var store = this[id];
-            if (!store || !store.area) {
-              store = _.Store(id, _area, this._ns); //new area-specific api in this namespace
-              if (!this[id]) {
-                this[id] = store;
-              }
-            }
-            return store;
-          },
-          namespace: function namespace(_namespace, singleArea, delim) {
-            delim = delim || this._delim || _.nsdelim;
-            if (!_namespace) {
-              return this._ns ? this._ns.substring(0, this._ns.length - delim.length) : '';
-            }
-            var ns = _namespace,
-              store = this[ns];
-            if (!store || !store.namespace) {
-              store = _.Store(this._id, this._area, this._ns + ns + delim); //new namespaced api
-              store._delim = delim;
-              if (!this[ns]) {
-                this[ns] = store;
-              }
-              if (!singleArea) {
-                for (var name in _.areas) {
-                  store.area(name, _.areas[name]);
-                }
-              }
-            }
-            return store;
-          },
-          isFake: function isFake(force) {
-            if (force) {
-              this._real = this._area;
-              this._area = _.storage('fake');
-            } else if (force === false) {
-              this._area = this._real || this._area;
-            }
-            return this._area.name === 'fake';
-          },
-          toString: function toString() {
-            return 'store' + (this._ns ? '.' + this.namespace() : '') + '[' + this._id + ']';
-          },
-          // storage functions
-          has: function has(key) {
-            if (this._area.has) {
-              return this._area.has(this._in(key)); //extension hook
-            }
-            return !!(this._in(key) in this._area);
-          },
-          size: function size() {
-            return this.keys().length;
-          },
-          each: function each(fn, fill) {
-            // fill is used by keys(fillList) and getAll(fillList))
-            for (var i = 0, m = _.length(this._area); i < m; i++) {
-              var key = this._out(_.key(this._area, i));
-              if (key !== undefined) {
-                if (fn.call(this, key, this.get(key), fill) === false) {
-                  break;
-                }
-              }
-              if (m > _.length(this._area)) {
-                m--;
-                i--;
-              } // in case of removeItem
-            }
-            return fill || this;
-          },
-          keys: function keys(fillList) {
-            return this.each(function (k, v, list) {
-              list.push(k);
-            }, fillList || []);
-          },
-          get: function get(key, alt) {
-            var s = _.get(this._area, this._in(key)),
-              fn;
-            if (typeof alt === "function") {
-              fn = alt;
-              alt = null;
-            }
-            return s !== null ? _.parse(s, fn) : alt != null ? alt : s;
-          },
-          getAll: function getAll(fillObj) {
-            return this.each(function (k, v, all) {
-              all[k] = v;
-            }, fillObj || {});
-          },
-          transact: function transact(key, fn, alt) {
-            var val = this.get(key, alt),
-              ret = fn(val);
-            this.set(key, ret === undefined ? val : ret);
-            return this;
-          },
-          set: function set(key, data, overwrite) {
-            var d = this.get(key),
-              replacer;
-            if (d != null && overwrite === false) {
-              return data;
-            }
-            if (typeof overwrite === "function") {
-              replacer = overwrite;
-              overwrite = undefined;
-            }
-            return _.set(this._area, this._in(key), _.stringify(data, replacer), overwrite) || d;
-          },
-          setAll: function setAll(data, overwrite) {
-            var changed, val;
-            for (var key in data) {
-              val = data[key];
-              if (this.set(key, val, overwrite) !== val) {
-                changed = true;
-              }
-            }
-            return changed;
-          },
-          add: function add(key, data, replacer) {
-            var d = this.get(key);
-            if (d instanceof Array) {
-              data = d.concat(data);
-            } else if (d !== null) {
-              var type = _typeof(d);
-              if (type === _typeof(data) && type === 'object') {
-                for (var k in data) {
-                  d[k] = data[k];
-                }
-                data = d;
-              } else {
-                data = d + data;
-              }
-            }
-            _.set(this._area, this._in(key), _.stringify(data, replacer));
-            return data;
-          },
-          remove: function remove(key, alt) {
-            var d = this.get(key, alt);
-            _.remove(this._area, this._in(key));
-            return d;
-          },
-          clear: function clear() {
-            if (!this._ns) {
-              _.clear(this._area);
-            } else {
-              this.each(function (k) {
-                _.remove(this._area, this._in(k));
-              }, 1);
-            }
-            return this;
-          },
-          clearAll: function clearAll() {
-            var area = this._area;
-            for (var id in _.areas) {
-              if (_.areas.hasOwnProperty(id)) {
-                this._area = _.areas[id];
-                this.clear();
-              }
-            }
-            this._area = area;
-            return this;
-          },
-          // internal use functions
-          _in: function _in(k) {
-            if (typeof k !== "string") {
-              k = _.stringify(k);
-            }
-            return this._ns ? this._ns + k : k;
-          },
-          _out: function _out(k) {
-            return this._ns ? k && k.indexOf(this._ns) === 0 ? k.substring(this._ns.length) : undefined :
-            // so each() knows to skip it
-            k;
-          }
-        },
-        // end _.storeAPI
-        storage: function storage(name) {
-          return _.inherit(_.storageAPI, {
-            items: {},
-            name: name
-          });
-        },
-        storageAPI: {
-          length: 0,
-          has: function has(k) {
-            return this.items.hasOwnProperty(k);
-          },
-          key: function key(i) {
-            var c = 0;
-            for (var k in this.items) {
-              if (this.has(k) && i === c++) {
-                return k;
-              }
-            }
-          },
-          setItem: function setItem(k, v) {
-            if (!this.has(k)) {
-              this.length++;
-            }
-            this.items[k] = v;
-          },
-          removeItem: function removeItem(k) {
-            if (this.has(k)) {
-              delete this.items[k];
-              this.length--;
-            }
-          },
-          getItem: function getItem(k) {
-            return this.has(k) ? this.items[k] : null;
-          },
-          clear: function clear() {
-            for (var k in this.items) {
-              this.removeItem(k);
-            }
-          }
-        } // end _.storageAPI
-      };
-      var store =
-      // safely set this up (throws error in IE10/32bit mode for local files)
-      _.Store("local", function () {
-        try {
-          return localStorage;
-        } catch (e) {}
-      }());
-      store.local = store; // for completeness
-      store._ = _; // for extenders and debuggers...
-      // safely setup store.session (throws exception in FF for file:/// urls)
-      store.area("session", function () {
-        try {
-          return sessionStorage;
-        } catch (e) {}
-      }());
-      store.area("page", _.storage("page"));
-      if (typeof define === 'function' && define.amd !== undefined) {
-        define('store2', [], function () {
-          return store;
-        });
-      } else if (module.exports) {
-        module.exports = store;
-      } else {
-        // expose the primary store fn to the global object and save conflicts
-        if (window.store) {
-          _.conflict = window.store;
+    function __spreadArray(to, from, pack) {
+      if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+          if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+          ar[i] = from[i];
         }
-        window.store = store;
       }
-    })(commonjsGlobal, commonjsGlobal && commonjsGlobal.define);
-  });
+      return to.concat(ar || Array.prototype.slice.call(from));
+    }
+    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+      var e = new Error(message);
+      return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+    };
 
-  var StoreWithExpiry = /** @class */ (function () {
-      function StoreWithExpiry() {
+    // 修复ts类型问题
+    function bind(fn, thisArg) {
+        return function wrap() {
+            var arg = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                arg[_i] = arguments[_i];
+            }
+            return fn.apply(thisArg, arg);
+        };
+    }
+    var typeOfTest = function (type) { return function (thing) { return typeof thing === type; }; };
+    var isArray = Array.isArray;
+    var isFunction = typeOfTest('function');
+    function isObject(item) {
+        return item && typeof item === 'object' && !Array.isArray(item);
+    }
+    function mergeDeep(target) {
+        var _a, _b;
+        var sources = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            sources[_i - 1] = arguments[_i];
+        }
+        if (!sources.length)
+            return target;
+        var source = sources.shift();
+        if (isObject(target) && isObject(source)) {
+            for (var key in source) {
+                if (source.hasOwnProperty(key)) {
+                    if (isObject(source[key])) {
+                        if (!target[key])
+                            Object.assign(target, (_a = {}, _a[key] = {}, _a));
+                        mergeDeep(target[key], source[key]);
+                    }
+                    else {
+                        Object.assign(target, (_b = {}, _b[key] = source[key], _b));
+                    }
+                }
+            }
+        }
+        return mergeDeep.apply(void 0, __spreadArray([target], sources, false));
+    }
+    function forEach(obj, fn, _a) {
+        var _b = _a === void 0 ? {} : _a, _c = _b.allOwnKeys, allOwnKeys = _c === void 0 ? false : _c;
+        // Don't bother if no value provided
+        if (obj === null || typeof obj === 'undefined') {
+            return;
+        }
+        var i;
+        var l;
+        // Force an array if not already something iterable
+        if (typeof obj !== 'object') {
+            /*eslint no-param-reassign:0*/
+            obj = [obj];
+        }
+        if (isArray(obj)) {
+            // Iterate over array values
+            for (i = 0, l = obj.length; i < l; i++) {
+                fn.call(null, obj[i], i, obj);
+            }
+        }
+        else {
+            // Iterate over object keys
+            var keys = allOwnKeys
+                ? Object.getOwnPropertyNames(obj)
+                : Object.keys(obj);
+            var len = keys.length;
+            var key = void 0;
+            for (i = 0; i < len; i++) {
+                key = keys[i];
+                fn.call(null, obj[key], key, obj);
+            }
+        }
+    }
+    var extend = function (a, b, thisArg, _a) {
+        var _b = _a === void 0 ? { allOwnKeys: false } : _a, allOwnKeys = _b.allOwnKeys;
+        forEach(b, function (val, key) {
+            if (thisArg && isFunction(val)) {
+                a[key] = bind(val, thisArg);
+            }
+            else {
+                a[key] = val;
+            }
+        }, { allOwnKeys: allOwnKeys });
+        return a;
+    };
+    var kindOf = (function (cache) { return function (thing) {
+        var str = toString.call(thing);
+        return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
+    }; })(Object.create(null));
+
+    var browser = function browser() {
+      throw new Error('ws does not work in the browser. Browser clients must use the native ' + 'WebSocket object');
+    };
+
+    var isNodeSocketSupported = typeof process !== 'undefined' && kindOf(process) === 'process';
+    var nodeSocket = isNodeSocketSupported && /** @class */ (function () {
+        function MSocket() {
+            this.type = 'node';
+            console.log('node', this, browser);
+        }
+        return MSocket;
+    }());
+
+    // Unique ID creation requires a high quality random # generator. In the browser we therefore
+    // require the crypto API and do not support built-in fallback to lower quality random number
+    // generators (like Math.random()).
+    var getRandomValues;
+    var rnds8 = new Uint8Array(16);
+    function rng() {
+      // lazy load so that environments that need to polyfill have a chance to do so
+      if (!getRandomValues) {
+        // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation.
+        getRandomValues = typeof crypto !== 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto);
+        if (!getRandomValues) {
+          throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
+        }
       }
-      StoreWithExpiry.prototype.set = function (key, value, ttl) {
-          if (ttl === void 0) { ttl = 3600 * 1000; }
-          var now = new Date();
-          var item = {
-              value: value,
-              expiry: now.getTime() + ttl,
-          };
-          store2.set(key, item);
-      };
-      StoreWithExpiry.prototype.get = function (key) {
-          var item = store2.get(key);
-          if (!item) {
-              return null;
-          }
-          var now = new Date();
-          if (now.getTime() > item.expiry) {
-              store2.remove(key);
-              return null;
-          }
-          return item.value;
-      };
-      StoreWithExpiry.prototype.remove = function (key) {
-          store2.remove(key);
-      };
-      StoreWithExpiry.prototype.clearAll = function () {
-          store2.clearAll();
-      };
-      return StoreWithExpiry;
-  }());
-  var storeWithExpiry = new StoreWithExpiry();
+      return getRandomValues(rnds8);
+    }
 
-  var MoobiusSDK = /** @class */ (function () {
-      function MoobiusSDK(instanceConfig) {
-          this.defaults = instanceConfig;
-          this.config = instanceConfig;
+    /**
+     * Convert array of 16 byte values to UUID string format of the form:
+     * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+     */
+
+    var byteToHex = [];
+    for (var i = 0; i < 256; ++i) {
+      byteToHex.push((i + 0x100).toString(16).slice(1));
+    }
+    function unsafeStringify(arr) {
+      var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      // Note: Be careful editing this code!  It's been tuned for performance
+      // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
+      return byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]];
+    }
+
+    var randomUUID = typeof crypto !== 'undefined' && crypto.randomUUID && crypto.randomUUID.bind(crypto);
+    var _native = {
+      randomUUID: randomUUID
+    };
+
+    function v4(options, buf, offset) {
+      if (_native.randomUUID && !buf && !options) {
+        return _native.randomUUID();
       }
-      MoobiusSDK.prototype.init = function (config) {
-          this.config = mergeDeep(this.defaults, config);
-          console.log('init', this.config);
-          storeWithExpiry.set('test', 'hhhhh', 100000);
-          console.log(storeWithExpiry.get('test'));
-      };
-      return MoobiusSDK;
-  }());
+      options = options || {};
+      var rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
 
-  function createInstance(defaultConfig) {
-      var context = new MoobiusSDK(defaultConfig);
-      var instance = bind(MoobiusSDK.prototype.init, context);
-      extend(instance, MoobiusSDK.prototype, context, { allOwnKeys: true });
-      extend(instance, context, null, { allOwnKeys: true });
-      return instance;
-  }
-  var defaults = {
-      url: 'https://api.moobius.net',
-  };
-  var moobiusSDk = createInstance(defaults);
+      rnds[6] = rnds[6] & 0x0f | 0x40;
+      rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
 
-  return moobiusSDk;
+      if (buf) {
+        offset = offset || 0;
+        for (var i = 0; i < 16; ++i) {
+          buf[offset + i] = rnds[i];
+        }
+        return buf;
+      }
+      return unsafeStringify(rnds);
+    }
+
+    var Heartbeat = function () {
+        return {
+            type: 'heartbeat',
+            request_id: v4(),
+            body: {},
+        };
+    };
+
+    var _a;
+    var isWebSocketSupported = typeof WebSocket !== 'undefined';
+    var webSocket = isWebSocketSupported && (_a = /** @class */ (function () {
+            function MSocket(url, option) {
+                var _this = this;
+                var _a, _b;
+                this.type = 'client';
+                this.socket = null;
+                this.reconnectMaxCount = 3;
+                this.heartbeatTime = 6000;
+                this.requestCallbacks = {};
+                this.heartbeatTimer = null;
+                this.connect = function () {
+                    _this.close();
+                    _this.socket = new WebSocket(_this.url);
+                    _this.onError();
+                    _this.onOpen();
+                    _this.onMessage();
+                };
+                this.login = function () { return __awaiter(_this, void 0, void 0, function () {
+                    return __generator(this, function (_a) {
+                        return [2 /*return*/];
+                    });
+                }); };
+                this.onMessage = function () {
+                    _this.socket.onmessage = function (event) { return __awaiter(_this, void 0, void 0, function () {
+                        var data, type, body, request_id, status_1, origin_type, context;
+                        return __generator(this, function (_a) {
+                            try {
+                                data = JSON.parse(event === null || event === void 0 ? void 0 : event.data);
+                                type = data.type, body = data.body;
+                                request_id = body.request_id, status_1 = body.status, origin_type = body.origin_type, context = body.context;
+                                // 分为两大类 copy是服务端针对requestid作出的响应
+                                if (type === 'copy') {
+                                    if (request_id && this.requestCallbacks[request_id]) {
+                                        if (!status_1) {
+                                            // 失败
+                                            console.error("".concat(origin_type, " : ").concat(context.message));
+                                            if (context.message.includes('access_token') ||
+                                                context.message.includes('login yet')) {
+                                                // console.log(context.message);
+                                                // const store: Store = getStore()!;
+                                                // await store.user.fetchSignOut();
+                                                console.log('refresh token');
+                                            }
+                                        }
+                                        if (origin_type === 'user_login') {
+                                            // 修改登录状态处理未登录的时候发送事件
+                                            // WS.isLoggedIn = status;
+                                            this.processMessageQueue();
+                                        }
+                                        this.requestCallbacks[request_id](data);
+                                        delete this.requestCallbacks[request_id];
+                                    }
+                                    return [2 /*return*/];
+                                }
+                                // 主动update的message不能使用对应的requestid
+                                if (this.socketCustomMessageEventList[type]) {
+                                    this.socketCustomMessageEventList[type](data);
+                                }
+                            }
+                            catch (error) {
+                                console.error(error);
+                            }
+                            return [2 /*return*/];
+                        });
+                    }); };
+                };
+                this.processMessageQueue = function () {
+                    // while (WS.unloginMessageQueue.length > 0) {
+                    //   const { data, callback } = WS.unloginMessageQueue.shift();
+                    //   this.send(data, callback);
+                    // }
+                };
+                this.ignoreLoginMessage = function (data) {
+                    return data.type === 'user_login' || data.type === 'ping';
+                };
+                this.reconnect = function () {
+                    return new Promise(function (resolve, reject) {
+                        _this.connect();
+                        resolve({});
+                    });
+                };
+                var mergeOption = mergeDeep(option, {
+                    autoReconnect: {
+                        reconnectMaxCount: 3,
+                    },
+                    heartbeat: {
+                        interval: 10000,
+                    },
+                    query: {},
+                });
+                this.url = this.formatUrl(url, mergeOption.query);
+                this.reconnectMaxCount =
+                    ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
+                this.heartbeatTime = ((_b = mergeOption.heartbeat) === null || _b === void 0 ? void 0 : _b.interval) || 3000;
+                this.socketCustomMessageEventList = (mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.onMessageEvent) || {};
+                this.connect();
+            }
+            MSocket.prototype.onOpen = function () {
+                var _this = this;
+                if (this.socket) {
+                    this.socket.onopen = function () {
+                        _this.login();
+                        if (_this.heartbeatTime) {
+                            _this.startHeartbeat();
+                        }
+                    };
+                }
+            };
+            MSocket.prototype.startHeartbeat = function () {
+                var _this = this;
+                var int = this.heartbeatTime;
+                this.heartbeatTimer = setInterval(function () {
+                    _this.send(Heartbeat());
+                }, int);
+            };
+            MSocket.prototype.send = function (data, callback) {
+                var _this = this;
+                if (callback === void 0) { callback = function () { }; }
+                return new Promise(function (resolve, reject) {
+                    if (!_this.socket) {
+                        reject(new Error('socket is null'));
+                        return;
+                    }
+                    var trySend = function () {
+                        if (!_this.socket) {
+                            reject(new Error('socket is null'));
+                            return;
+                        }
+                        // const isIgnoreLoginMessage = this.ignoreLoginMessage(data);
+                        // console.log(WS.isLoggedIn, isIgnoreLoginMessage)
+                        // if (!isIgnoreLoginMessage && !WS.isLoggedIn) {
+                        //   WS.unloginMessageQueue.push({
+                        //     data,
+                        //     callback,
+                        //   });
+                        //   return;
+                        // }
+                        if (_this.socket.readyState === _this.socket.OPEN) {
+                            try {
+                                // 发送消息前收集onMessage的对应回调函数
+                                _this.requestCallbacks[data.request_id || v4()] = function (response) {
+                                    callback(response);
+                                    resolve(response);
+                                };
+                                _this.socket.send(JSON.stringify(data));
+                                resolve(); // 消息成功发送
+                            }
+                            catch (error) {
+                                reject(error); // 发送过程中出现错误
+                            }
+                        }
+                        else if ([_this.socket.CLOSING, _this.socket.CLOSED].includes(_this.socket.readyState)) {
+                            _this.reconnect()
+                                .then(function () {
+                                setTimeout(trySend, 1000); // 重连成功后重试发送
+                            })
+                                .catch(reject); // 重连失败
+                        }
+                        else if (_this.socket.readyState === _this.socket.CONNECTING) {
+                            setTimeout(trySend, 1000); // 1秒后重试
+                        }
+                    };
+                    trySend();
+                });
+            };
+            MSocket.prototype.close = function () {
+                var _a;
+                (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
+                clearInterval(this.heartbeatTimer);
+                this.socket = null;
+            };
+            MSocket.prototype.onError = function () {
+                if (this.socket) {
+                    this.socket.onerror = function (event) {
+                        console.log('socket:error:event:', event);
+                    };
+                }
+            };
+            MSocket.prototype.formatUrl = function (url, query) {
+                var hasQuery = url.includes('?');
+                url += Object.keys(query).length
+                    ? "".concat(hasQuery ? '&' : '?').concat(Object.keys(query)
+                        .map(function (key) { return "".concat(key, "=").concat(query[key]); })
+                        .join('&'))
+                    : '';
+                return url;
+            };
+            return MSocket;
+        }()),
+        _a.isLoggedIn = false,
+        _a.unloginMessageQueue = [],
+        _a);
+
+    var knownAdapters = {
+        webSocket: webSocket,
+        nodeSocket: nodeSocket,
+    };
+    var isResolvedHandle = function (adapter) {
+        return isFunction(adapter) || adapter === null || adapter === false;
+    };
+    var renderReason = function (reason) { return "- ".concat(reason); };
+    var adapters = {
+        getAdapter: function (adapters) {
+            var _adapters = isArray(adapters) ? adapters : [adapters];
+            var length = adapters.length;
+            var nameOrAdapter;
+            var adapter;
+            var rejectedReasons = {};
+            for (var i = 0; i < length; i++) {
+                nameOrAdapter = _adapters[i];
+                var id = void 0;
+                adapter = nameOrAdapter;
+                if (!isResolvedHandle(nameOrAdapter)) {
+                    adapter =
+                        knownAdapters[(id = String(nameOrAdapter))];
+                    if (adapter === undefined) {
+                        console.error("Unknown adapter '".concat(id, "'"));
+                    }
+                }
+                if (adapter) {
+                    break;
+                }
+                rejectedReasons[id || '#' + i] = adapter;
+            }
+            if (!adapter) {
+                var reasons = Object.entries(rejectedReasons).map(function (_a) {
+                    var id = _a[0], state = _a[1];
+                    return "adapter ".concat(id, " ") +
+                        (state === false
+                            ? 'is not supported by the environment'
+                            : 'is not available in the build');
+                });
+                var s = length
+                    ? reasons.length > 1
+                        ? 'since :\n' + reasons.map(renderReason).join('\n')
+                        : ' ' + renderReason(reasons[0])
+                    : 'as no adapter specified';
+                console.error("There is no suitable adapter to dispatch the request " + s, 'ERR_NOT_SUPPORT');
+            }
+            return adapter;
+        },
+        adapters: knownAdapters,
+    };
+
+    var MoobiusSDK = /** @class */ (function () {
+        function MoobiusSDK(instanceConfig) {
+            this.defaults = instanceConfig;
+            this.config = instanceConfig;
+        }
+        MoobiusSDK.prototype.init = function (config) {
+            this.config = mergeDeep(this.defaults, config);
+            // console.log('init', this.config);
+            // storage.set('test', 'hhhhh', 100000);
+            // console.log(storage.get('test'));
+            var adapter = new (adapters.getAdapter(config.adapter || this.defaults.adapter))();
+            console.log(adapter.type);
+        };
+        return MoobiusSDK;
+    }());
+
+    function createInstance(defaultConfig) {
+        var context = new MoobiusSDK(defaultConfig);
+        var instance = bind(MoobiusSDK.prototype.init, context);
+        extend(instance, MoobiusSDK.prototype, context, { allOwnKeys: true });
+        extend(instance, context, null, { allOwnKeys: true });
+        return instance;
+    }
+    var defaults = {
+        adapter: ['webSocket', 'nodeSocket'],
+        url: 'https://api.moobius.net',
+    };
+    var moobiusSDk = createInstance(defaults);
+
+    return moobiusSDk;
 
 }));
 //# sourceMappingURL=moobius-api-sdk.js.map

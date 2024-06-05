@@ -12,6 +12,7 @@ function createInstance(defaultConfig: MoobiusBasicConfig) {
 }
 
 const defaults = {
+  adapter: ['webSocket', 'nodeSocket'],
   url: 'https://api.moobius.net',
 };
 

@@ -1,13 +1,14 @@
-export function bind(fn: any, thisArg: any) {
-  return function wrap(...arg: any) {
+// 修复ts类型问题
+export function bind(fn: Function, thisArg: any) {
+  return function wrap(...arg: any[]) {
     return fn.apply(thisArg, arg);
   };
 }
 const typeOfTest = (type: string) => (thing: unknown) => typeof thing === type;
 
-const { isArray } = Array;
+export const { isArray } = Array;
 
-const isFunction = typeOfTest('function');
+export const isFunction = typeOfTest('function');
 
 function isObject(item: object) {
   return item && typeof item === 'object' && !Array.isArray(item);
@@ -89,3 +90,8 @@ export const extend = (
   );
   return a;
 };
+
+export const kindOf = ((cache) => (thing: any) => {
+  const str = toString.call(thing);
+  return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
+})(Object.create(null));
