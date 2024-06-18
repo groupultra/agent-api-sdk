@@ -14,7 +14,7 @@ export type SIGNIN = {
   ChallengeParameters: {};
 };
 
-import type { CURRENTUSERINFO } from './info';
+export type ONBOARDING_PROGRESS = 'un_start';
 
 export type CHANNEL_TYPE = 'dcs' | 'ccs' | 'scs';
 export type CHANNEL_BASE = {
@@ -52,6 +52,22 @@ export type TARGETGROUP_PARAMS = {
   user_id: string;
   channel_id: string;
   group_id: string;
+};
+
+export type CURRENTUSERINFO = {
+  context: {
+    avatar: string;
+    description: string;
+    name: string;
+  };
+  email: string;
+  email_verified: boolean;
+  user_id: string;
+  system_context: {
+    onboarding: {
+      progress: ONBOARDING_PROGRESS;
+    };
+  };
 };
 
 export type CHARACTER_ITEM = {
