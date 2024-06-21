@@ -8,6 +8,7 @@ function createInstance(defaultConfig: MoobiusBasicConfig) {
   extend(instance, MoobiusSDK.prototype, context, { allOwnKeys: true });
 
   extend(instance, context, null, { allOwnKeys: true });
+  console.log('instance', instance);
   return instance;
 }
 

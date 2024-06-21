@@ -55,18 +55,22 @@ export default isWebSocketSupported &&
     static unloginMessageQueue: Array<any> = [];
 
     constructor(url: string, option: IWSOptions) {
-      const mergeOption: IWSOptions = mergeDeep(option, {
-        autoReconnect: {
-          reconnectMaxCount: 3,
+      const mergeOption: IWSOptions = mergeDeep(
+        {
+          autoReconnect: {
+            reconnectMaxCount: 3,
+          },
+          heartbeat: {
+            interval: 10000,
+          },
+          query: {},
         },
-        heartbeat: {
-          interval: 10000,
-        },
-        query: {},
-      });
+        option,
+      );
+      console.log(mergeOption);
       this.url = this.formatUrl(
         url,
-        mergeOption.query as Record<string, string>,
+        mergeOption?.query as Record<string, string>,
       );
       this.reconnectMaxCount =
         mergeOption.autoReconnect?.reconnectMaxCount || 3;
@@ -248,12 +252,14 @@ export default isWebSocketSupported &&
     };
 
     public formatUrl(url: string, query: Record<string, string>): string {
-      const hasQuery = url.includes('?');
-      url += Object.keys(query).length
-        ? `${hasQuery ? '&' : '?'}${Object.keys(query)
-            .map((key) => `${key}=${query[key]}`)
-            .join('&')}`
-        : '';
+      if (url && query) {
+        const hasQuery = url?.includes('?');
+        url += Object.keys(query).length
+          ? `${hasQuery ? '&' : '?'}${Object.keys(query)
+              .map((key) => `${key}=${query[key]}`)
+              .join('&')}`
+          : '';
+      }
       return url;
     }
   };

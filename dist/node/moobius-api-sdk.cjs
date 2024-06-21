@@ -3,10 +3,12 @@
 
 const WebSocket$1 = require('ws');
 const uuid = require('uuid');
+const axios = require('axios');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 const WebSocket__default = /*#__PURE__*/_interopDefaultLegacy(WebSocket$1);
+const axios__default = /*#__PURE__*/_interopDefaultLegacy(axios);
 
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -266,7 +268,7 @@ const webSocket = isWebSocketSupported && (_a = /** @class */ (function () {
                     resolve({});
                 });
             };
-            var mergeOption = mergeDeep(option, {
+            var mergeOption = mergeDeep({
                 autoReconnect: {
                     reconnectMaxCount: 3,
                 },
@@ -274,8 +276,9 @@ const webSocket = isWebSocketSupported && (_a = /** @class */ (function () {
                     interval: 10000,
                 },
                 query: {},
-            });
-            this.url = this.formatUrl(url, mergeOption.query);
+            }, option);
+            console.log(mergeOption);
+            this.url = this.formatUrl(url, mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.query);
             this.reconnectMaxCount =
                 ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
             this.heartbeatTime = ((_b = mergeOption.heartbeat) === null || _b === void 0 ? void 0 : _b.interval) || 3000;
@@ -364,12 +367,14 @@ const webSocket = isWebSocketSupported && (_a = /** @class */ (function () {
             }
         };
         MSocket.prototype.formatUrl = function (url, query) {
-            var hasQuery = url.includes('?');
-            url += Object.keys(query).length
-                ? "".concat(hasQuery ? '&' : '?').concat(Object.keys(query)
-                    .map(function (key) { return "".concat(key, "=").concat(query[key]); })
-                    .join('&'))
-                : '';
+            if (url && query) {
+                var hasQuery = url === null || url === void 0 ? void 0 : url.includes('?');
+                url += Object.keys(query).length
+                    ? "".concat(hasQuery ? '&' : '?').concat(Object.keys(query)
+                        .map(function (key) { return "".concat(key, "=").concat(query[key]); })
+                        .join('&'))
+                    : '';
+            }
             return url;
         };
         return MSocket;
@@ -429,6 +434,302 @@ const adapters = {
     adapters: knownAdapters,
 };
 
+var SignUp = function (params) { return ({
+    url: '/auth/sign_up',
+    method: 'POST',
+    data: params,
+    config: {
+        ignoreAuth: true,
+    },
+}); };
+var SignIn = function (params) { return ({
+    url: '/auth/sign_in',
+    method: 'POST',
+    data: params,
+    config: {
+        ignoreAuth: true,
+    },
+}); };
+var SignOut = function (params) { return ({
+    url: '/auth/sign_out',
+    method: 'POST',
+    data: params,
+    config: {
+        ignoreAuth: true,
+    },
+}); };
+var Refresh = function (params) { return ({
+    url: '/auth/refresh',
+    method: 'POST',
+    data: params,
+    config: {
+        ignoreAuth: true,
+    },
+}); };
+var ConfirmSignUp = function (params) { return ({
+    url: '/auth/confirm_sign_up',
+    method: 'POST',
+    data: params,
+    config: {
+        ignoreAuth: true,
+    },
+}); };
+var ResendConfirm = function (params) { return ({
+    url: '/auth/resend_confirmation',
+    method: 'POST',
+    data: params,
+    config: {
+        ignoreAuth: true,
+    },
+}); };
+var ConfirmResetPassword = function (params) { return ({
+    url: '/auth/confirm_reset_password',
+    method: 'POST',
+    data: params,
+    config: {
+        ignoreAuth: true,
+    },
+}); };
+var ForgotPassword = function (params) { return ({
+    url: '/auth/forgot_password',
+    method: 'POST',
+    data: params,
+    config: {
+        ignoreAuth: true,
+    },
+}); };
+
+const auth = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    SignUp: SignUp,
+    SignIn: SignIn,
+    SignOut: SignOut,
+    Refresh: Refresh,
+    ConfirmSignUp: ConfirmSignUp,
+    ResendConfirm: ResendConfirm,
+    ConfirmResetPassword: ConfirmResetPassword,
+    ForgotPassword: ForgotPassword
+});
+
+var Create = function (channel_name, channel_description) { return ({
+    url: '/channel/create',
+    method: 'POST',
+    data: {
+        channel_name: channel_name,
+        context: {
+            channel_description: channel_description,
+        },
+    },
+}); };
+var Update = function (channel_id, channel_name) { return ({
+    url: '/channel/update',
+    method: 'POST',
+    data: {
+        channel_id: channel_id,
+        channel_name: channel_name,
+    },
+}); };
+var Popular = function () { return ({
+    url: '/channel/popular',
+    method: 'GET',
+}); };
+var List = function () { return ({
+    url: '/channel/list',
+    method: 'GET',
+}); };
+/** **********
+ * [history]
+ */
+var HistoryMessage = function (params) {
+    params.before === 0
+        ? delete params.before
+        : (params.before = params.before / 1000);
+    params.after === 0
+        ? delete params.after
+        : (params.after = params.after / 1000);
+    return {
+        url: '/channel/history_message',
+        method: 'GET',
+        data: params,
+    };
+};
+
+const channel = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    Create: Create,
+    Update: Update,
+    Popular: Popular,
+    List: List,
+    HistoryMessage: HistoryMessage
+});
+
+// export const fetchFileUpload = async (
+var fetchFileDownload = function (pathname) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        return [2 /*return*/, {
+                url: pathname,
+                method: 'GET',
+            }];
+    });
+}); };
+
+const file = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    fetchFileDownload: fetchFileDownload
+});
+
+var Info = function () { return ({
+    url: '/user/info',
+    method: 'GET',
+}); };
+var UpdateCurrentUserInfo = function (params) { return ({
+    url: '/user/info',
+    method: 'POST',
+    data: params,
+}); };
+/** **********
+ * [whistle/ group]
+ */
+var GroupList = function (channel_id) { return ({
+    url: '/user/group/list',
+    method: 'GET',
+    data: {
+        channel_id: channel_id,
+    },
+}); };
+var GroupUpdate = function (data) { return ({
+    url: '/user/group/update',
+    method: 'POST',
+    data: data,
+}); };
+var GroupCreate = function (data) { return ({
+    url: '/user/group/create',
+    method: 'POST',
+    data: data,
+}); };
+var GroupDel = function (channel_id, group_id) { return ({
+    url: '/user/group/delete',
+    method: 'POST',
+    data: {
+        channel_id: channel_id,
+        group_id: group_id,
+    },
+}); };
+/** **********
+ * [temp]
+ */
+var GroupTemp = function (channel_id) { return ({
+    url: '/user/group/temp',
+    method: 'GET',
+    data: {
+        channel_id: channel_id,
+    },
+}); };
+var Grouptemp = function (data) { return ({
+    url: '/user/group/temp',
+    method: 'POST',
+    data: data,
+}); };
+/** **********
+ * [TargetGroup description]
+ */
+var Group = function (data) { return ({
+    url: '/user/group',
+    method: 'GET',
+    data: data,
+}); };
+var ServiceGroup = function (group_id) { return ({
+    url: '/service/group',
+    method: 'GET',
+    data: {
+        group_id: group_id,
+    },
+}); };
+/** **********
+ * [Character]
+ */
+var CharacterFetchProfile = function (character_list) { return ({
+    url: '/character/fetch_profile',
+    method: 'GET',
+    data: {
+        character_list: character_list,
+    },
+}); };
+var getUserProfile = function (character_list) { return ({
+    url: '/character/fetch_profile',
+    method: 'POST',
+    data: {
+        character_list: character_list,
+    },
+}); };
+
+const user = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    Info: Info,
+    UpdateCurrentUserInfo: UpdateCurrentUserInfo,
+    GroupList: GroupList,
+    GroupUpdate: GroupUpdate,
+    GroupCreate: GroupCreate,
+    GroupDel: GroupDel,
+    GroupTemp: GroupTemp,
+    Grouptemp: Grouptemp,
+    Group: Group,
+    ServiceGroup: ServiceGroup,
+    CharacterFetchProfile: CharacterFetchProfile,
+    getUserProfile: getUserProfile
+});
+
+var httpConfig = {
+    auth: auth,
+    channel: channel,
+    file: file,
+    user: user,
+};
+
+var AUTHERROT_CODE = 10005;
+var createAxios = function (_a) {
+    var baseURL = _a.baseURL, _b = _a.timeout, timeout = _b === void 0 ? 3000 : _b;
+    var instance = axios__default["default"].create({
+        baseURL: baseURL,
+        timeout: timeout,
+    });
+    instance.interceptors.request.use(function (config) {
+        if (!config.ignoreAuth) ;
+        return config;
+    });
+    instance.interceptors.response.use(function (response) {
+        var data = response.data;
+        if (data.code === AUTHERROT_CODE) ;
+        return data;
+    }, function (error) {
+        return Promise.reject(error);
+    });
+    return instance;
+};
+
+function dispatchHttpRequest() {
+    var _this = this;
+    var self = this;
+    var fetch = createAxios({
+        baseURL: this.config.url,
+    });
+    var _keys = Object.keys(httpConfig);
+    _keys.forEach(function (key) {
+        var subKeys = Object.keys(httpConfig[key]);
+        self[key] = subKeys.reduce(function (acc, methodName) {
+            var getConfig = httpConfig[key][methodName];
+            acc[methodName] = function (data) { return __awaiter(_this, void 0, void 0, function () {
+                var config;
+                return __generator(this, function (_a) {
+                    config = getConfig && getConfig(data);
+                    return [2 /*return*/, fetch(config)];
+                });
+            }); };
+            return acc;
+        }, {});
+    });
+}
+
 var MoobiusSDK = /** @class */ (function () {
     function MoobiusSDK(instanceConfig) {
         this.defaults = instanceConfig;
@@ -436,11 +737,11 @@ var MoobiusSDK = /** @class */ (function () {
     }
     MoobiusSDK.prototype.init = function (config) {
         this.config = mergeDeep(this.defaults, config);
-        // console.log('init', this.config);
-        // storage.set('test', 'hhhhh', 100000);
-        // console.log(storage.get('test'));
-        var adapter = new (adapters.getAdapter(config.adapter || this.defaults.adapter))();
-        console.log(adapter.type);
+        console.log('this.config', this.config);
+        var Adapter = adapters.getAdapter(config.adapter || this.defaults.adapter);
+        console.log('adapter', Adapter);
+        dispatchHttpRequest.call(this);
+        return this;
     };
     return MoobiusSDK;
 }());
@@ -450,6 +751,7 @@ function createInstance(defaultConfig) {
     var instance = bind(MoobiusSDK.prototype.init, context);
     extend(instance, MoobiusSDK.prototype, context, { allOwnKeys: true });
     extend(instance, context, null, { allOwnKeys: true });
+    console.log('instance', instance);
     return instance;
 }
 var defaults = {

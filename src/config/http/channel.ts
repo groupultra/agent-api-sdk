@@ -1,4 +1,59 @@
-export const Create = (channel_name: string, channel_description: string) => ({
+import { BASE_HTTP_RESPONSE } from './baseHttpResponse';
+
+export type ONBOARDING_PROGRESS = 'un_start';
+
+export type CHANNEL_TYPE = 'dcs' | 'ccs' | 'scs';
+export type CHANNEL_BASE = {
+  channel_context: {
+    channel_description: string;
+    channel_type: CHANNEL_TYPE;
+  } | null;
+  channel_id: string;
+  channel_name: string;
+  user_channel_context?: {
+    [key: string]: string;
+  };
+};
+export type CHANNEL_LIST = CHANNEL_BASE[];
+
+export type CHANNEL_POPULAR_LIST = Array<
+  CHANNEL_BASE & {
+    channel_context: {
+      channel_description: string;
+      channel_type: CHANNEL_TYPE;
+      channel_user_count: number;
+      tag: string[];
+    };
+  }
+>;
+export type CURRENTUSERINFO = {
+  context: {
+    avatar: string;
+    description: string;
+    name: string;
+  };
+  email: string;
+  email_verified: boolean;
+  user_id: string;
+  system_context: {
+    onboarding: {
+      progress: ONBOARDING_PROGRESS;
+    };
+  };
+};
+export type CHARACTER_ITEM = {
+  character_id: string;
+  character_context: CURRENTUSERINFO['context'];
+};
+export const Create = (
+  channel_name: string,
+  channel_description: string,
+): BASE_HTTP_RESPONSE<{
+  channel_name: string;
+  context: {
+    channel_description: string;
+  };
+}> => ({
   url: '/channel/create',
   method: 'POST',
   data: {
@@ -9,7 +64,13 @@ export const Create = (channel_name: string, channel_description: string) => ({
   },
 });
 
-export const Update = (channel_id: string, channel_name: string) => ({
+export const Update = (
+  channel_id: string,
+  channel_name: string,
+): BASE_HTTP_RESPONSE<{
+  channel_id: string;
+  channel_name: string;
+}> => ({
   url: '/channel/update',
   method: 'POST',
   data: {
@@ -18,12 +79,12 @@ export const Update = (channel_id: string, channel_name: string) => ({
   },
 });
 
-export const Popular = () => ({
+export const Popular = (): BASE_HTTP_RESPONSE => ({
   url: '/channel/popular',
   method: 'GET',
 });
 
-export const List = () => ({
+export const List = (): BASE_HTTP_RESPONSE => ({
   url: '/channel/list',
   method: 'GET',
 });
@@ -32,12 +93,17 @@ export const List = () => ({
  * [history]
  */
 
-export const HistoryMessage = async (params: {
+export const HistoryMessage = (params: {
   channel_id: string;
   before?: number; // 时间戳 s
   after?: number; // 时间戳 s
   limit: number;
-}) => {
+}): BASE_HTTP_RESPONSE<{
+  channel_id: string;
+  before?: number; // 时间戳 s
+  after?: number; // 时间戳 s
+  limit: number;
+}> => {
   params.before === 0
     ? delete params.before
     : (params.before = params.before! / 1000);

@@ -10,10 +10,14 @@
     <script src="/moobius-api-sdk.js"></script>
     <script>
       const _mSdk = moobiusSdk({
-        url: 'https://api.moobius.net',
+        url: 'https://api.moobius.net/',
       });
 
-      console.log(_mSdk);
+      console.log(_mSdk, moobiusSdk);
+      _mSdk.auth.SignIn({
+        username: 'yihang19950903@gmail.com',
+        password: '12345678',
+      });
     </script>
   </body>
 </html>
