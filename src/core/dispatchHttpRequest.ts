@@ -16,7 +16,7 @@ type ADDHTTPMETHOD = {
 };
 type MoobiusSDKWithIndex = MoobiusSDK & ADDHTTPMETHOD;
 
-const LOGIN_METHODNAME = 'SignIn';
+const LOGIN_METHODNAME = 'signIn';
 
 export default function dispatchHttpRequest(this: MoobiusSDK) {
   const self = this as MoobiusSDKWithIndex;
@@ -39,9 +39,11 @@ export default function dispatchHttpRequest(this: MoobiusSDK) {
         }
         const config = getConfig && (getConfig as any)(data);
         const result = await fetch(config);
+        console.log('methodName::::::', methodName, result.data);
         if (methodName === LOGIN_METHODNAME) {
           const { AccessToken, ExpiresIn, RefreshToken, TokenType } =
             result.data.AuthenticationResult;
+          console.log('success login!!');
           storage.set<USER_INFO>(
             'userInfo',
             {

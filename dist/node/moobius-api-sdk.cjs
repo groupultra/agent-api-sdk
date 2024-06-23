@@ -620,31 +620,46 @@ const httpConfig = {
 };
 
 class StoreWithExpiry {
-    set(key, value, ttl = 3600 * 1000) {
-        const now = new Date();
-        const item = {
-            value: value,
-            expiry: now.getTime() + ttl,
+    constructor() {
+        this.set = (key, value, ttl = 3600 * 1000) => {
+            try {
+                const now = new Date();
+                const item = {
+                    value: value,
+                    expiry: now.getTime() + ttl,
+                };
+                this._store.set(key, item);
+                console.log('set_success', this._store.get(key));
+            }
+            catch (error) {
+                console.error('set_error', error);
+            }
         };
-        store__default["default"].set(key, item);
-    }
-    get(key) {
-        const item = store__default["default"].get(key);
-        if (!item) {
-            return null;
+        this.get = (key) => {
+            const item = this._store.get(key);
+            if (!item) {
+                return null;
+            }
+            const now = new Date();
+            if (now.getTime() > item.expiry) {
+                this._store.remove(key);
+                return null;
+            }
+            return item.value;
+        };
+        this.remove = (key) => {
+            this._store.remove(key);
+        };
+        this.clearAll = () => {
+            this._store.clearAll();
+        };
+        this._store = store__default["default"];
+        if (typeof process !== 'undefined' && kindOf(process) === 'process') {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const LocalStorage = require('node-localstorage').LocalStorage;
+            this._store.localstorage = new LocalStorage('./scratch');
         }
-        const now = new Date();
-        if (now.getTime() > item.expiry) {
-            store__default["default"].remove(key);
-            return null;
-        }
-        return item.value;
-    }
-    remove(key) {
-        store__default["default"].remove(key);
-    }
-    clearAll() {
-        store__default["default"].clearAll();
+        // console.log('constructor', this._store);
     }
 }
 const storeWithExpiry = new StoreWithExpiry();
@@ -690,7 +705,7 @@ const createAxios = ({ baseURL, timeout = 3000, }) => {
     return instance;
 };
 
-const LOGIN_METHODNAME = 'SignIn';
+const LOGIN_METHODNAME = 'signIn';
 function dispatchHttpRequest() {
     const self = this;
     const fetch = createAxios({
@@ -707,8 +722,10 @@ function dispatchHttpRequest() {
                 }
                 const config = getConfig && getConfig(data);
                 const result = yield fetch(config);
+                console.log('methodName::::::', methodName, result.data);
                 if (methodName === LOGIN_METHODNAME) {
                     const { AccessToken, ExpiresIn, RefreshToken, TokenType } = result.data.AuthenticationResult;
+                    console.log('success login!!');
                     storeWithExpiry.set('userInfo', {
                         AccessToken,
                         ExpiresIn,

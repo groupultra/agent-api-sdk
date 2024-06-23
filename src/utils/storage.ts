@@ -1,40 +1,54 @@
+import { kindOf } from '@/utils/index';
 import store from 'store2';
-
 interface StoreItem<T> {
   value: T;
   expiry: number;
 }
 
 class StoreWithExpiry {
-  set<T>(key: string, value: T, ttl: number = 3600 * 1000): void {
-    const now = new Date();
-    const item: StoreItem<T> = {
-      value: value,
-      expiry: now.getTime() + ttl,
-    };
-    store.set(key, item);
+  private _store: any;
+  constructor() {
+    this._store = store;
+    if (typeof process !== 'undefined' && kindOf(process) === 'process') {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const LocalStorage = require('node-localstorage').LocalStorage;
+      this._store.localstorage = new LocalStorage('./scratch');
+    }
+    // console.log('constructor', this._store);
   }
-
-  get<T>(key: string): T | null {
-    const item = store.get(key) as StoreItem<T> | null;
+  set = <T>(key: string, value: T, ttl: number = 3600 * 1000): void => {
+    try {
+      const now = new Date();
+      const item: StoreItem<T> = {
+        value: value,
+        expiry: now.getTime() + ttl,
+      };
+      this._store.set(key, item);
+      console.log('set_success', this._store.get(key));
+    } catch (error) {
+      console.error('set_error', error);
+    }
+  };
+  get = <T>(key: string): T | null => {
+    const item = this._store.get(key) as StoreItem<T> | null;
     if (!item) {
       return null;
     }
     const now = new Date();
     if (now.getTime() > item.expiry) {
-      store.remove(key);
+      this._store.remove(key);
       return null;
     }
     return item.value;
-  }
+  };
 
-  remove(key: string): void {
-    store.remove(key);
-  }
+  remove = (key: string): void => {
+    this._store.remove(key);
+  };
 
-  clearAll(): void {
-    store.clearAll();
-  }
+  clearAll = (): void => {
+    this._store.clearAll();
+  };
 }
 
 const storeWithExpiry = new StoreWithExpiry();
