@@ -15,12 +15,12 @@ export type TARGETGROUP_PARAMS = {
 
 export type CHANNEL_GROUP_LIST = CHANNEL_GROUP_ITEM[];
 
-export const Info = (): BASE_HTTP_RESPONSE => ({
+export const getCurrentInfo = (): BASE_HTTP_RESPONSE => ({
   url: '/user/info',
   method: 'GET',
 });
 
-export const UpdateCurrentUserInfo = (params: {
+export const updateCurrentInfo = (params: {
   avatar?: string;
 }): BASE_HTTP_RESPONSE<{ avatar?: string }> => ({
   url: '/user/info',
@@ -32,7 +32,7 @@ export const UpdateCurrentUserInfo = (params: {
  * [whistle/ group]
  */
 
-export const GroupList = (
+export const groupList = (
   channel_id: string,
 ): BASE_HTTP_RESPONSE<{ channel_id?: string }> => ({
   url: '/user/group/list',
@@ -42,7 +42,7 @@ export const GroupList = (
   },
 });
 
-export const GroupUpdate = (
+export const groupUpdate = (
   data: {
     channel_id: string;
   } & Pick<CHANNEL_GROUP_ITEM, 'group_id' | 'characters' | 'group_name'>,
@@ -56,7 +56,7 @@ export const GroupUpdate = (
   data,
 });
 
-export const GroupCreate = (
+export const groupCreate = (
   data: {
     channel_id: string;
   } & Pick<CHANNEL_GROUP_ITEM, 'characters' | 'group_name'>,
@@ -70,7 +70,7 @@ export const GroupCreate = (
   data,
 });
 
-export const GroupDel = (
+export const groupDel = (
   channel_id: string,
   group_id: string,
 ): BASE_HTTP_RESPONSE<{
@@ -88,7 +88,7 @@ export const GroupDel = (
 /** **********
  * [temp]
  */
-export const GroupTemp = (
+export const getGroupTemp = (
   channel_id: string,
 ): BASE_HTTP_RESPONSE<{
   channel_id: string;
@@ -100,7 +100,7 @@ export const GroupTemp = (
   },
 });
 
-export const Grouptemp = (data: {
+export const updateGrouptemp = (data: {
   channel_id: string;
   characters: CHANNEL_GROUP_ITEM['characters'];
 }): BASE_HTTP_RESPONSE<{
@@ -116,7 +116,7 @@ export const Grouptemp = (data: {
  * [TargetGroup description]
  */
 
-export const Group = (
+export const group = (
   data: TARGETGROUP_PARAMS,
 ): BASE_HTTP_RESPONSE<TARGETGROUP_PARAMS> => ({
   url: '/user/group',
@@ -138,7 +138,7 @@ export const ServiceGroup = (
 /** **********
  * [Character]
  */
-export const CharacterFetchProfile = (
+export const characterFetchProfile = (
   character_list: string[],
 ): BASE_HTTP_RESPONSE<{
   character_list: string[];

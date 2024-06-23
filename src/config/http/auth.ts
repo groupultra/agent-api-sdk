@@ -5,20 +5,14 @@ export type SIGN_PARAMS = {
   confirmation_code?: string;
 };
 
-export type SIGNIN = {
-  AuthenticationResult: {
-    AccessToken: string;
-    ExpiresIn: number;
-    IdToken: string;
-    RefreshToken: string;
-    TokenType: 'Bearer';
-  };
-  ChallengeParameters: {
-    [key: string]: string;
-  };
+export type USER_INFO = {
+  AccessToken: string;
+  ExpiresIn: number;
+  RefreshToken: string;
+  TokenType: 'Bearer';
 };
 
-export const SignUp = (
+export const signUp = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/sign_up',
@@ -29,7 +23,7 @@ export const SignUp = (
   },
 });
 
-export const SignIn = (
+export const signIn = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/sign_in',
@@ -40,7 +34,7 @@ export const SignIn = (
   },
 });
 
-export const SignOut = (params: {
+export const signOut = (params: {
   access_token: string;
 }): BASE_HTTP_RESPONSE<{
   access_token: string;
@@ -53,7 +47,7 @@ export const SignOut = (params: {
   },
 });
 
-export const Refresh = (params: {
+export const refresh = (params: {
   refresh_token: string;
   username: string;
 }): BASE_HTTP_RESPONSE<{
@@ -68,7 +62,7 @@ export const Refresh = (params: {
   },
 });
 
-export const ConfirmSignUp = (
+export const confirmSignUp = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/confirm_sign_up',
@@ -79,7 +73,7 @@ export const ConfirmSignUp = (
   },
 });
 
-export const ResendConfirm = (
+export const resendConfirm = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/resend_confirmation',
@@ -90,7 +84,7 @@ export const ResendConfirm = (
   },
 });
 
-export const ConfirmResetPassword = (
+export const confirmResetPassword = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/confirm_reset_password',
@@ -101,7 +95,7 @@ export const ConfirmResetPassword = (
   },
 });
 
-export const ForgotPassword = (
+export const forgotPassword = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/forgot_password',

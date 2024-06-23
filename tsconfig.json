@@ -1,17 +1,22 @@
 {
   "compilerOptions": {
     "sourceMap": true,
-    "target": "ES5",
+    "target": "ES6",
     "module": "ESNext",
     "noEmitOnError": true,
     "lib": ["ESNext", "DOM"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "strict": true,
     "rootDir": "./src",
     "allowJs": true,
     "noImplicitAny": true,
     "outDir": "./dist",
+    "baseUrl": "./",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "*": ["node_modules/*"]
     },
     "allowSyntheticDefaultImports": true
   },

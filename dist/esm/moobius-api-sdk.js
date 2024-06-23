@@ -1,4 +1,99 @@
 // Moobius-js-api-sdk v1.0.0 Copyright (c) 2024 moobius and contributors
+// 修复ts类型问题
+function bind$1(fn, thisArg) {
+    return function wrap(...arg) {
+        return fn.apply(thisArg, arg);
+    };
+}
+const typeOfTest$1 = (type) => (thing) => typeof thing === type;
+const { isArray: isArray$1 } = Array;
+const isFunction$1 = typeOfTest$1('function');
+function isObject$1(item) {
+    return item && typeof item === 'object' && !Array.isArray(item);
+}
+function mergeDeep(target, ...sources) {
+    if (!sources.length)
+        return target;
+    const source = sources.shift();
+    if (isObject$1(target) && isObject$1(source)) {
+        for (const key in source) {
+            if (source.hasOwnProperty(key)) {
+                if (isObject$1(source[key])) {
+                    if (!target[key])
+                        Object.assign(target, { [key]: {} });
+                    mergeDeep(target[key], source[key]);
+                }
+                else {
+                    Object.assign(target, { [key]: source[key] });
+                }
+            }
+        }
+    }
+    return mergeDeep(target, ...sources);
+}
+function forEach$1(obj, fn, { allOwnKeys = false } = {}) {
+    // Don't bother if no value provided
+    if (obj === null || typeof obj === 'undefined') {
+        return;
+    }
+    let i;
+    let l;
+    // Force an array if not already something iterable
+    if (typeof obj !== 'object') {
+        /*eslint no-param-reassign:0*/
+        obj = [obj];
+    }
+    if (isArray$1(obj)) {
+        // Iterate over array values
+        for (i = 0, l = obj.length; i < l; i++) {
+            fn.call(null, obj[i], i, obj);
+        }
+    }
+    else {
+        // Iterate over object keys
+        const keys = allOwnKeys
+            ? Object.getOwnPropertyNames(obj)
+            : Object.keys(obj);
+        const len = keys.length;
+        let key;
+        for (i = 0; i < len; i++) {
+            key = keys[i];
+            fn.call(null, obj[key], key, obj);
+        }
+    }
+}
+const extend$1 = (a, b, thisArg, { allOwnKeys } = { allOwnKeys: false }) => {
+    forEach$1(b, (val, key) => {
+        if (thisArg && isFunction$1(val)) {
+            a[key] = bind$1(val, thisArg);
+        }
+        else {
+            a[key] = val;
+        }
+    }, { allOwnKeys });
+    return a;
+};
+const kindOf$1 = ((cache) => (thing) => {
+    const str = toString.call(thing);
+    return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
+})(Object.create(null));
+
+var browser = function () {
+  throw new Error(
+    'ws does not work in the browser. Browser clients must use the native ' +
+      'WebSocket object'
+  );
+};
+
+const isNodeSocketSupported = typeof process !== 'undefined' && kindOf$1(process) === 'process';
+const nodeSocket = isNodeSocketSupported &&
+    class MSocket {
+        constructor() {
+            this.type = 'node';
+            console.log('node', this, browser);
+        }
+    };
+
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -24,154 +119,10 @@ function __awaiter(thisArg, _arguments, P, generator) {
     });
 }
 
-function __generator(thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-}
-
-function __spreadArray(to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-}
-
 typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
     var e = new Error(message);
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
-
-// 修复ts类型问题
-function bind$1(fn, thisArg) {
-    return function wrap() {
-        var arg = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            arg[_i] = arguments[_i];
-        }
-        return fn.apply(thisArg, arg);
-    };
-}
-var typeOfTest$1 = function (type) { return function (thing) { return typeof thing === type; }; };
-var isArray$1 = Array.isArray;
-var isFunction$1 = typeOfTest$1('function');
-function isObject$1(item) {
-    return item && typeof item === 'object' && !Array.isArray(item);
-}
-function mergeDeep(target) {
-    var _a, _b;
-    var sources = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        sources[_i - 1] = arguments[_i];
-    }
-    if (!sources.length)
-        return target;
-    var source = sources.shift();
-    if (isObject$1(target) && isObject$1(source)) {
-        for (var key in source) {
-            if (source.hasOwnProperty(key)) {
-                if (isObject$1(source[key])) {
-                    if (!target[key])
-                        Object.assign(target, (_a = {}, _a[key] = {}, _a));
-                    mergeDeep(target[key], source[key]);
-                }
-                else {
-                    Object.assign(target, (_b = {}, _b[key] = source[key], _b));
-                }
-            }
-        }
-    }
-    return mergeDeep.apply(void 0, __spreadArray([target], sources, false));
-}
-function forEach$1(obj, fn, _a) {
-    var _b = _a === void 0 ? {} : _a, _c = _b.allOwnKeys, allOwnKeys = _c === void 0 ? false : _c;
-    // Don't bother if no value provided
-    if (obj === null || typeof obj === 'undefined') {
-        return;
-    }
-    var i;
-    var l;
-    // Force an array if not already something iterable
-    if (typeof obj !== 'object') {
-        /*eslint no-param-reassign:0*/
-        obj = [obj];
-    }
-    if (isArray$1(obj)) {
-        // Iterate over array values
-        for (i = 0, l = obj.length; i < l; i++) {
-            fn.call(null, obj[i], i, obj);
-        }
-    }
-    else {
-        // Iterate over object keys
-        var keys = allOwnKeys
-            ? Object.getOwnPropertyNames(obj)
-            : Object.keys(obj);
-        var len = keys.length;
-        var key = void 0;
-        for (i = 0; i < len; i++) {
-            key = keys[i];
-            fn.call(null, obj[key], key, obj);
-        }
-    }
-}
-var extend$1 = function (a, b, thisArg, _a) {
-    var _b = _a === void 0 ? { allOwnKeys: false } : _a, allOwnKeys = _b.allOwnKeys;
-    forEach$1(b, function (val, key) {
-        if (thisArg && isFunction$1(val)) {
-            a[key] = bind$1(val, thisArg);
-        }
-        else {
-            a[key] = val;
-        }
-    }, { allOwnKeys: allOwnKeys });
-    return a;
-};
-var kindOf$1 = (function (cache) { return function (thing) {
-    var str = toString.call(thing);
-    return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
-}; })(Object.create(null));
-
-var browser = function () {
-  throw new Error(
-    'ws does not work in the browser. Browser clients must use the native ' +
-      'WebSocket object'
-  );
-};
-
-var isNodeSocketSupported = typeof process !== 'undefined' && kindOf$1(process) === 'process';
-const nodeSocket = isNodeSocketSupported && /** @class */ (function () {
-    function MSocket() {
-        this.type = 'node';
-        console.log('node', this, browser);
-    }
-    return MSocket;
-}());
 
 // Unique ID creation requires a high quality random # generator. In the browser we therefore
 // require the crypto API and do not support built-in fallback to lower quality random number
@@ -238,7 +189,7 @@ function v4(options, buf, offset) {
   return unsafeStringify(rnds);
 }
 
-var Heartbeat = function () {
+const Heartbeat = () => {
     return {
         type: 'heartbeat',
         request_id: v4(),
@@ -247,10 +198,9 @@ var Heartbeat = function () {
 };
 
 var _a;
-var isWebSocketSupported = typeof WebSocket !== 'undefined';
-const webSocket = isWebSocketSupported && (_a = /** @class */ (function () {
-        function MSocket(url, option) {
-            var _this = this;
+const isWebSocketSupported = typeof WebSocket !== 'undefined';
+const webSocket = isWebSocketSupported && (_a = class MSocket {
+        constructor(url, option) {
             var _a, _b;
             this.type = 'client';
             this.socket = null;
@@ -258,78 +208,71 @@ const webSocket = isWebSocketSupported && (_a = /** @class */ (function () {
             this.heartbeatTime = 6000;
             this.requestCallbacks = {};
             this.heartbeatTimer = null;
-            this.connect = function () {
-                _this.close();
-                _this.socket = new WebSocket(_this.url);
-                _this.onError();
-                _this.onOpen();
-                _this.onMessage();
+            this.connect = () => {
+                this.close();
+                this.socket = new WebSocket(this.url);
+                this.onError();
+                this.onOpen();
+                this.onMessage();
             };
-            this.login = function () { return __awaiter(_this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2 /*return*/];
-                });
-            }); };
-            this.onMessage = function () {
-                _this.socket.onmessage = function (event) { return __awaiter(_this, void 0, void 0, function () {
-                    var data, type, body, request_id, status_1, origin_type, context;
-                    return __generator(this, function (_a) {
-                        try {
-                            data = JSON.parse(event === null || event === void 0 ? void 0 : event.data);
-                            type = data.type, body = data.body;
-                            request_id = body.request_id, status_1 = body.status, origin_type = body.origin_type, context = body.context;
-                            // 分为两大类 copy是服务端针对requestid作出的响应
-                            if (type === 'copy') {
-                                if (request_id && this.requestCallbacks[request_id]) {
-                                    if (!status_1) {
-                                        // 失败
-                                        console.error("".concat(origin_type, " : ").concat(context.message));
-                                        if (context.message.includes('access_token') ||
-                                            context.message.includes('login yet')) {
-                                            // console.log(context.message);
-                                            // const store: Store = getStore()!;
-                                            // await store.user.fetchSignOut();
-                                            console.log('refresh token');
-                                        }
+            this.login = () => __awaiter(this, void 0, void 0, function* () {
+            });
+            this.onMessage = () => {
+                this.socket.onmessage = (event) => __awaiter(this, void 0, void 0, function* () {
+                    try {
+                        const data = JSON.parse(event === null || event === void 0 ? void 0 : event.data);
+                        const { type, body } = data;
+                        const { request_id, status, origin_type, context } = body;
+                        // 分为两大类 copy是服务端针对requestid作出的响应
+                        if (type === 'copy') {
+                            if (request_id && this.requestCallbacks[request_id]) {
+                                if (!status) {
+                                    // 失败
+                                    console.error(`${origin_type} : ${context.message}`);
+                                    if (context.message.includes('access_token') ||
+                                        context.message.includes('login yet')) {
+                                        // console.log(context.message);
+                                        // const store: Store = getStore()!;
+                                        // await store.user.fetchSignOut();
+                                        console.log('refresh token');
                                     }
-                                    if (origin_type === 'user_login') {
-                                        // 修改登录状态处理未登录的时候发送事件
-                                        // WS.isLoggedIn = status;
-                                        this.processMessageQueue();
-                                    }
-                                    this.requestCallbacks[request_id](data);
-                                    delete this.requestCallbacks[request_id];
                                 }
-                                return [2 /*return*/];
+                                if (origin_type === 'user_login') {
+                                    // 修改登录状态处理未登录的时候发送事件
+                                    // WS.isLoggedIn = status;
+                                    this.processMessageQueue();
+                                }
+                                this.requestCallbacks[request_id](data);
+                                delete this.requestCallbacks[request_id];
                             }
-                            // 主动update的message不能使用对应的requestid
-                            if (this.socketCustomMessageEventList[type]) {
-                                this.socketCustomMessageEventList[type](data);
-                            }
+                            return;
                         }
-                        catch (error) {
-                            console.error(error);
+                        // 主动update的message不能使用对应的requestid
+                        if (this.socketCustomMessageEventList[type]) {
+                            this.socketCustomMessageEventList[type](data);
                         }
-                        return [2 /*return*/];
-                    });
-                }); };
+                    }
+                    catch (error) {
+                        console.error(error);
+                    }
+                });
             };
-            this.processMessageQueue = function () {
+            this.processMessageQueue = () => {
                 // while (WS.unloginMessageQueue.length > 0) {
                 //   const { data, callback } = WS.unloginMessageQueue.shift();
                 //   this.send(data, callback);
                 // }
             };
-            this.ignoreLoginMessage = function (data) {
+            this.ignoreLoginMessage = (data) => {
                 return data.type === 'user_login' || data.type === 'ping';
             };
-            this.reconnect = function () {
-                return new Promise(function (resolve, reject) {
-                    _this.connect();
+            this.reconnect = () => {
+                return new Promise((resolve, reject) => {
+                    this.connect();
                     resolve({});
                 });
             };
-            var mergeOption = mergeDeep({
+            const mergeOption = mergeDeep({
                 autoReconnect: {
                     reconnectMaxCount: 3,
                 },
@@ -346,34 +289,30 @@ const webSocket = isWebSocketSupported && (_a = /** @class */ (function () {
             this.socketCustomMessageEventList = (mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.onMessageEvent) || {};
             this.connect();
         }
-        MSocket.prototype.onOpen = function () {
-            var _this = this;
+        onOpen() {
             if (this.socket) {
-                this.socket.onopen = function () {
-                    _this.login();
-                    if (_this.heartbeatTime) {
-                        _this.startHeartbeat();
+                this.socket.onopen = () => {
+                    this.login();
+                    if (this.heartbeatTime) {
+                        this.startHeartbeat();
                     }
                 };
             }
-        };
-        MSocket.prototype.startHeartbeat = function () {
-            var _this = this;
-            var int = this.heartbeatTime;
-            this.heartbeatTimer = setInterval(function () {
-                _this.send(Heartbeat());
+        }
+        startHeartbeat() {
+            const int = this.heartbeatTime;
+            this.heartbeatTimer = setInterval(() => {
+                this.send(Heartbeat());
             }, int);
-        };
-        MSocket.prototype.send = function (data, callback) {
-            var _this = this;
-            if (callback === void 0) { callback = function () { }; }
-            return new Promise(function (resolve, reject) {
-                if (!_this.socket) {
+        }
+        send(data, callback = () => { }) {
+            return new Promise((resolve, reject) => {
+                if (!this.socket) {
                     reject(new Error('socket is null'));
                     return;
                 }
-                var trySend = function () {
-                    if (!_this.socket) {
+                const trySend = () => {
+                    if (!this.socket) {
                         reject(new Error('socket is null'));
                         return;
                     }
@@ -386,88 +325,85 @@ const webSocket = isWebSocketSupported && (_a = /** @class */ (function () {
                     //   });
                     //   return;
                     // }
-                    if (_this.socket.readyState === _this.socket.OPEN) {
+                    if (this.socket.readyState === this.socket.OPEN) {
                         try {
                             // 发送消息前收集onMessage的对应回调函数
-                            _this.requestCallbacks[data.request_id || v4()] = function (response) {
+                            this.requestCallbacks[data.request_id || v4()] = (response) => {
                                 callback(response);
                                 resolve(response);
                             };
-                            _this.socket.send(JSON.stringify(data));
+                            this.socket.send(JSON.stringify(data));
                             resolve(); // 消息成功发送
                         }
                         catch (error) {
                             reject(error); // 发送过程中出现错误
                         }
                     }
-                    else if ([_this.socket.CLOSING, _this.socket.CLOSED].includes(_this.socket.readyState)) {
-                        _this.reconnect()
-                            .then(function () {
+                    else if ([this.socket.CLOSING, this.socket.CLOSED].includes(this.socket.readyState)) {
+                        this.reconnect()
+                            .then(() => {
                             setTimeout(trySend, 1000); // 重连成功后重试发送
                         })
                             .catch(reject); // 重连失败
                     }
-                    else if (_this.socket.readyState === _this.socket.CONNECTING) {
+                    else if (this.socket.readyState === this.socket.CONNECTING) {
                         setTimeout(trySend, 1000); // 1秒后重试
                     }
                 };
                 trySend();
             });
-        };
-        MSocket.prototype.close = function () {
+        }
+        close() {
             var _a;
             (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
             clearInterval(this.heartbeatTimer);
             this.socket = null;
-        };
-        MSocket.prototype.onError = function () {
+        }
+        onError() {
             if (this.socket) {
-                this.socket.onerror = function (event) {
+                this.socket.onerror = (event) => {
                     console.log('socket:error:event:', event);
                 };
             }
-        };
-        MSocket.prototype.formatUrl = function (url, query) {
+        }
+        formatUrl(url, query) {
             if (url && query) {
-                var hasQuery = url === null || url === void 0 ? void 0 : url.includes('?');
+                const hasQuery = url === null || url === void 0 ? void 0 : url.includes('?');
                 url += Object.keys(query).length
-                    ? "".concat(hasQuery ? '&' : '?').concat(Object.keys(query)
-                        .map(function (key) { return "".concat(key, "=").concat(query[key]); })
-                        .join('&'))
+                    ? `${hasQuery ? '&' : '?'}${Object.keys(query)
+                        .map((key) => `${key}=${query[key]}`)
+                        .join('&')}`
                     : '';
             }
             return url;
-        };
-        return MSocket;
-    }()),
+        }
+    },
     _a.isLoggedIn = false,
     _a.unloginMessageQueue = [],
     _a);
 
-var knownAdapters$1 = {
-    webSocket: webSocket,
-    nodeSocket: nodeSocket,
+const knownAdapters$1 = {
+    webSocket,
+    nodeSocket,
 };
-var isResolvedHandle$1 = function (adapter) {
-    return isFunction$1(adapter) || adapter === null || adapter === false;
-};
-var renderReason$1 = function (reason) { return "- ".concat(reason); };
+const isResolvedHandle$1 = (adapter) => isFunction$1(adapter) || adapter === null || adapter === false;
+const renderReason$1 = (reason) => `- ${reason}`;
 const adapters$1 = {
-    getAdapter: function (adapters) {
-        var _adapters = isArray$1(adapters) ? adapters : [adapters];
-        var length = adapters.length;
-        var nameOrAdapter;
-        var adapter;
-        var rejectedReasons = {};
-        for (var i = 0; i < length; i++) {
+    getAdapter: (adapters) => {
+        let _adapters = isArray$1(adapters) ? adapters : [adapters];
+        const { length } = adapters;
+        let nameOrAdapter;
+        let adapter;
+        const rejectedReasons = {};
+        for (let i = 0; i < length; i++) {
             nameOrAdapter = _adapters[i];
-            var id = void 0;
+            let id;
             adapter = nameOrAdapter;
             if (!isResolvedHandle$1(nameOrAdapter)) {
                 adapter =
                     knownAdapters$1[(id = String(nameOrAdapter))];
                 if (adapter === undefined) {
-                    console.error("Unknown adapter '".concat(id, "'"));
+                    console.error(`Unknown adapter '${id}'`);
                 }
             }
             if (adapter) {
@@ -476,132 +412,129 @@ const adapters$1 = {
             rejectedReasons[id || '#' + i] = adapter;
         }
         if (!adapter) {
-            var reasons = Object.entries(rejectedReasons).map(function (_a) {
-                var id = _a[0], state = _a[1];
-                return "adapter ".concat(id, " ") +
-                    (state === false
-                        ? 'is not supported by the environment'
-                        : 'is not available in the build');
-            });
-            var s = length
+            const reasons = Object.entries(rejectedReasons).map(([id, state]) => `adapter ${id} ` +
+                (state === false
+                    ? 'is not supported by the environment'
+                    : 'is not available in the build'));
+            let s = length
                 ? reasons.length > 1
                     ? 'since :\n' + reasons.map(renderReason$1).join('\n')
                     : ' ' + renderReason$1(reasons[0])
                 : 'as no adapter specified';
-            console.error("There is no suitable adapter to dispatch the request " + s, 'ERR_NOT_SUPPORT');
+            console.error(`There is no suitable adapter to dispatch the request ` + s, 'ERR_NOT_SUPPORT');
         }
         return adapter;
     },
     adapters: knownAdapters$1,
 };
 
-var SignUp = function (params) { return ({
+const signUp = (params) => ({
     url: '/auth/sign_up',
     method: 'POST',
     data: params,
     config: {
         ignoreAuth: true,
     },
-}); };
-var SignIn = function (params) { return ({
+});
+const signIn = (params) => ({
     url: '/auth/sign_in',
     method: 'POST',
     data: params,
     config: {
         ignoreAuth: true,
     },
-}); };
-var SignOut = function (params) { return ({
+});
+const signOut = (params) => ({
     url: '/auth/sign_out',
     method: 'POST',
     data: params,
     config: {
         ignoreAuth: true,
     },
-}); };
-var Refresh = function (params) { return ({
+});
+const refresh = (params) => ({
     url: '/auth/refresh',
     method: 'POST',
     data: params,
     config: {
         ignoreAuth: true,
     },
-}); };
-var ConfirmSignUp = function (params) { return ({
+});
+const confirmSignUp = (params) => ({
     url: '/auth/confirm_sign_up',
     method: 'POST',
     data: params,
     config: {
         ignoreAuth: true,
     },
-}); };
-var ResendConfirm = function (params) { return ({
+});
+const resendConfirm = (params) => ({
     url: '/auth/resend_confirmation',
     method: 'POST',
     data: params,
     config: {
         ignoreAuth: true,
     },
-}); };
-var ConfirmResetPassword = function (params) { return ({
+});
+const confirmResetPassword = (params) => ({
     url: '/auth/confirm_reset_password',
     method: 'POST',
     data: params,
     config: {
         ignoreAuth: true,
     },
-}); };
-var ForgotPassword = function (params) { return ({
+});
+const forgotPassword = (params) => ({
     url: '/auth/forgot_password',
     method: 'POST',
     data: params,
     config: {
         ignoreAuth: true,
     },
-}); };
+});
 
 const auth = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    SignUp: SignUp,
-    SignIn: SignIn,
-    SignOut: SignOut,
-    Refresh: Refresh,
-    ConfirmSignUp: ConfirmSignUp,
-    ResendConfirm: ResendConfirm,
-    ConfirmResetPassword: ConfirmResetPassword,
-    ForgotPassword: ForgotPassword
+    signUp: signUp,
+    signIn: signIn,
+    signOut: signOut,
+    refresh: refresh,
+    confirmSignUp: confirmSignUp,
+    resendConfirm: resendConfirm,
+    confirmResetPassword: confirmResetPassword,
+    forgotPassword: forgotPassword
 });
 
-var Create = function (channel_name, channel_description) { return ({
+const create = (channel_name, channel_description) => ({
     url: '/channel/create',
     method: 'POST',
     data: {
-        channel_name: channel_name,
+        channel_name,
         context: {
-            channel_description: channel_description,
+            channel_description,
         },
     },
-}); };
-var Update = function (channel_id, channel_name) { return ({
+});
+const update = (channel_id, channel_name) => ({
     url: '/channel/update',
     method: 'POST',
     data: {
-        channel_id: channel_id,
-        channel_name: channel_name,
+        channel_id,
+        channel_name,
     },
-}); };
-var Popular = function () { return ({
+});
+const popular = () => ({
     url: '/channel/popular',
     method: 'GET',
-}); };
-var List = function () { return ({
+});
+const list = () => ({
     url: '/channel/list',
     method: 'GET',
-}); };
+});
 /** **********
  * [history]
  */
-var HistoryMessage = function (params) {
+const historyMessage = (params) => {
     params.before === 0
         ? delete params.before
         : (params.before = params.before / 1000);
@@ -617,134 +550,132 @@ var HistoryMessage = function (params) {
 
 const channel = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    Create: Create,
-    Update: Update,
-    Popular: Popular,
-    List: List,
-    HistoryMessage: HistoryMessage
+    create: create,
+    update: update,
+    popular: popular,
+    list: list,
+    historyMessage: historyMessage
 });
 
 // export const fetchFileUpload = async (
-var fetchFileDownload = function (pathname) { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        return [2 /*return*/, {
-                url: pathname,
-                method: 'GET',
-            }];
-    });
-}); };
+const fetchFileDownload = (pathname) => __awaiter(void 0, void 0, void 0, function* () {
+    return {
+        url: pathname,
+        method: 'GET',
+    };
+});
 
 const file = /*#__PURE__*/Object.freeze({
     __proto__: null,
     fetchFileDownload: fetchFileDownload
 });
 
-var Info = function () { return ({
+const getCurrentInfo = () => ({
     url: '/user/info',
     method: 'GET',
-}); };
-var UpdateCurrentUserInfo = function (params) { return ({
+});
+const updateCurrentInfo = (params) => ({
     url: '/user/info',
     method: 'POST',
     data: params,
-}); };
+});
 /** **********
  * [whistle/ group]
  */
-var GroupList = function (channel_id) { return ({
+const groupList = (channel_id) => ({
     url: '/user/group/list',
     method: 'GET',
     data: {
-        channel_id: channel_id,
+        channel_id,
     },
-}); };
-var GroupUpdate = function (data) { return ({
+});
+const groupUpdate = (data) => ({
     url: '/user/group/update',
     method: 'POST',
-    data: data,
-}); };
-var GroupCreate = function (data) { return ({
+    data,
+});
+const groupCreate = (data) => ({
     url: '/user/group/create',
     method: 'POST',
-    data: data,
-}); };
-var GroupDel = function (channel_id, group_id) { return ({
+    data,
+});
+const groupDel = (channel_id, group_id) => ({
     url: '/user/group/delete',
     method: 'POST',
     data: {
-        channel_id: channel_id,
-        group_id: group_id,
+        channel_id,
+        group_id,
     },
-}); };
+});
 /** **********
  * [temp]
  */
-var GroupTemp = function (channel_id) { return ({
+const getGroupTemp = (channel_id) => ({
     url: '/user/group/temp',
     method: 'GET',
     data: {
-        channel_id: channel_id,
+        channel_id,
     },
-}); };
-var Grouptemp = function (data) { return ({
+});
+const updateGrouptemp = (data) => ({
     url: '/user/group/temp',
     method: 'POST',
-    data: data,
-}); };
+    data,
+});
 /** **********
  * [TargetGroup description]
  */
-var Group = function (data) { return ({
+const group = (data) => ({
     url: '/user/group',
     method: 'GET',
-    data: data,
-}); };
-var ServiceGroup = function (group_id) { return ({
+    data,
+});
+const ServiceGroup = (group_id) => ({
     url: '/service/group',
     method: 'GET',
     data: {
-        group_id: group_id,
+        group_id,
     },
-}); };
+});
 /** **********
  * [Character]
  */
-var CharacterFetchProfile = function (character_list) { return ({
+const characterFetchProfile = (character_list) => ({
     url: '/character/fetch_profile',
     method: 'GET',
     data: {
-        character_list: character_list,
+        character_list,
     },
-}); };
-var getUserProfile = function (character_list) { return ({
+});
+const getUserProfile = (character_list) => ({
     url: '/character/fetch_profile',
     method: 'POST',
     data: {
-        character_list: character_list,
+        character_list,
     },
-}); };
+});
 
 const user = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    Info: Info,
-    UpdateCurrentUserInfo: UpdateCurrentUserInfo,
-    GroupList: GroupList,
-    GroupUpdate: GroupUpdate,
-    GroupCreate: GroupCreate,
-    GroupDel: GroupDel,
-    GroupTemp: GroupTemp,
-    Grouptemp: Grouptemp,
-    Group: Group,
+    getCurrentInfo: getCurrentInfo,
+    updateCurrentInfo: updateCurrentInfo,
+    groupList: groupList,
+    groupUpdate: groupUpdate,
+    groupCreate: groupCreate,
+    groupDel: groupDel,
+    getGroupTemp: getGroupTemp,
+    updateGrouptemp: updateGrouptemp,
+    group: group,
     ServiceGroup: ServiceGroup,
-    CharacterFetchProfile: CharacterFetchProfile,
+    characterFetchProfile: characterFetchProfile,
     getUserProfile: getUserProfile
 });
 
-var httpConfig = {
-    auth: auth,
-    channel: channel,
-    file: file,
-    user: user,
+const httpConfig = {
+    auth,
+    channel,
+    file,
+    user,
 };
 
 function bind(fn, thisArg) {
@@ -4383,79 +4314,438 @@ axios.default = axios;
 // this module should only have a default export
 const axios$1 = axios;
 
-var AUTHERROT_CODE = 10005;
-var createAxios = function (_a) {
-    var baseURL = _a.baseURL, _b = _a.timeout, timeout = _b === void 0 ? 3000 : _b;
-    var instance = axios$1.create({
-        baseURL: baseURL,
-        timeout: timeout,
+var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+function createCommonjsModule(fn, basedir, module) {
+	return module = {
+		path: basedir,
+		exports: {},
+		require: function (path, base) {
+			return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
+		}
+	}, fn(module, module.exports), module.exports;
+}
+
+function commonjsRequire () {
+	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
+}
+
+var store2 = createCommonjsModule(function (module) {
+(function(window, define) {
+    var _ = {
+        version: "2.14.3",
+        areas: {},
+        apis: {},
+        nsdelim: '.',
+
+        // utilities
+        inherit: function(api, o) {
+            for (var p in api) {
+                if (!o.hasOwnProperty(p)) {
+                    Object.defineProperty(o, p, Object.getOwnPropertyDescriptor(api, p));
+                }
+            }
+            return o;
+        },
+        stringify: function(d, fn) {
+            return d === undefined || typeof d === "function" ? d+'' : JSON.stringify(d,fn||_.replace);
+        },
+        parse: function(s, fn) {
+            // if it doesn't parse, return as is
+            try{ return JSON.parse(s,fn||_.revive); }catch(e){ return s; }
+        },
+
+        // extension hooks
+        fn: function(name, fn) {
+            _.storeAPI[name] = fn;
+            for (var api in _.apis) {
+                _.apis[api][name] = fn;
+            }
+        },
+        get: function(area, key){ return area.getItem(key); },
+        set: function(area, key, string){ area.setItem(key, string); },
+        remove: function(area, key){ area.removeItem(key); },
+        key: function(area, i){ return area.key(i); },
+        length: function(area){ return area.length; },
+        clear: function(area){ area.clear(); },
+
+        // core functions
+        Store: function(id, area, namespace) {
+            var store = _.inherit(_.storeAPI, function(key, data, overwrite) {
+                if (arguments.length === 0){ return store.getAll(); }
+                if (typeof data === "function"){ return store.transact(key, data, overwrite); }// fn=data, alt=overwrite
+                if (data !== undefined){ return store.set(key, data, overwrite); }
+                if (typeof key === "string" || typeof key === "number"){ return store.get(key); }
+                if (typeof key === "function"){ return store.each(key); }
+                if (!key){ return store.clear(); }
+                return store.setAll(key, data);// overwrite=data, data=key
+            });
+            store._id = id;
+            try {
+                var testKey = '__store2_test';
+                area.setItem(testKey, 'ok');
+                store._area = area;
+                area.removeItem(testKey);
+            } catch (e) {
+                store._area = _.storage('fake');
+            }
+            store._ns = namespace || '';
+            if (!_.areas[id]) {
+                _.areas[id] = store._area;
+            }
+            if (!_.apis[store._ns+store._id]) {
+                _.apis[store._ns+store._id] = store;
+            }
+            return store;
+        },
+        storeAPI: {
+            // admin functions
+            area: function(id, area) {
+                var store = this[id];
+                if (!store || !store.area) {
+                    store = _.Store(id, area, this._ns);//new area-specific api in this namespace
+                    if (!this[id]){ this[id] = store; }
+                }
+                return store;
+            },
+            namespace: function(namespace, singleArea, delim) {
+                delim = delim || this._delim || _.nsdelim;
+                if (!namespace){
+                    return this._ns ? this._ns.substring(0,this._ns.length-delim.length) : '';
+                }
+                var ns = namespace, store = this[ns];
+                if (!store || !store.namespace) {
+                    store = _.Store(this._id, this._area, this._ns+ns+delim);//new namespaced api
+                    store._delim = delim;
+                    if (!this[ns]){ this[ns] = store; }
+                    if (!singleArea) {
+                        for (var name in _.areas) {
+                            store.area(name, _.areas[name]);
+                        }
+                    }
+                }
+                return store;
+            },
+            isFake: function(force) {
+                if (force) {
+                    this._real = this._area;
+                    this._area = _.storage('fake');
+                } else if (force === false) {
+                    this._area = this._real || this._area;
+                }
+                return this._area.name === 'fake';
+            },
+            toString: function() {
+                return 'store'+(this._ns?'.'+this.namespace():'')+'['+this._id+']';
+            },
+
+            // storage functions
+            has: function(key) {
+                if (this._area.has) {
+                    return this._area.has(this._in(key));//extension hook
+                }
+                return !!(this._in(key) in this._area);
+            },
+            size: function(){ return this.keys().length; },
+            each: function(fn, fill) {// fill is used by keys(fillList) and getAll(fillList))
+                for (var i=0, m=_.length(this._area); i<m; i++) {
+                    var key = this._out(_.key(this._area, i));
+                    if (key !== undefined) {
+                        if (fn.call(this, key, this.get(key), fill) === false) {
+                            break;
+                        }
+                    }
+                    if (m > _.length(this._area)) { m--; i--; }// in case of removeItem
+                }
+                return fill || this;
+            },
+            keys: function(fillList) {
+                return this.each(function(k, v, list){ list.push(k); }, fillList || []);
+            },
+            get: function(key, alt) {
+                var s = _.get(this._area, this._in(key)),
+                    fn;
+                if (typeof alt === "function") {
+                    fn = alt;
+                    alt = null;
+                }
+                return s !== null ? _.parse(s, fn) :
+                    alt != null ? alt : s;
+            },
+            getAll: function(fillObj) {
+                return this.each(function(k, v, all){ all[k] = v; }, fillObj || {});
+            },
+            transact: function(key, fn, alt) {
+                var val = this.get(key, alt),
+                    ret = fn(val);
+                this.set(key, ret === undefined ? val : ret);
+                return this;
+            },
+            set: function(key, data, overwrite) {
+                var d = this.get(key),
+                    replacer;
+                if (d != null && overwrite === false) {
+                    return data;
+                }
+                if (typeof overwrite === "function") {
+                    replacer = overwrite;
+                    overwrite = undefined;
+                }
+                return _.set(this._area, this._in(key), _.stringify(data, replacer), overwrite) || d;
+            },
+            setAll: function(data, overwrite) {
+                var changed, val;
+                for (var key in data) {
+                    val = data[key];
+                    if (this.set(key, val, overwrite) !== val) {
+                        changed = true;
+                    }
+                }
+                return changed;
+            },
+            add: function(key, data, replacer) {
+                var d = this.get(key);
+                if (d instanceof Array) {
+                    data = d.concat(data);
+                } else if (d !== null) {
+                    var type = typeof d;
+                    if (type === typeof data && type === 'object') {
+                        for (var k in data) {
+                            d[k] = data[k];
+                        }
+                        data = d;
+                    } else {
+                        data = d + data;
+                    }
+                }
+                _.set(this._area, this._in(key), _.stringify(data, replacer));
+                return data;
+            },
+            remove: function(key, alt) {
+                var d = this.get(key, alt);
+                _.remove(this._area, this._in(key));
+                return d;
+            },
+            clear: function() {
+                if (!this._ns) {
+                    _.clear(this._area);
+                } else {
+                    this.each(function(k){ _.remove(this._area, this._in(k)); }, 1);
+                }
+                return this;
+            },
+            clearAll: function() {
+                var area = this._area;
+                for (var id in _.areas) {
+                    if (_.areas.hasOwnProperty(id)) {
+                        this._area = _.areas[id];
+                        this.clear();
+                    }
+                }
+                this._area = area;
+                return this;
+            },
+
+            // internal use functions
+            _in: function(k) {
+                if (typeof k !== "string"){ k = _.stringify(k); }
+                return this._ns ? this._ns + k : k;
+            },
+            _out: function(k) {
+                return this._ns ?
+                    k && k.indexOf(this._ns) === 0 ?
+                        k.substring(this._ns.length) :
+                        undefined : // so each() knows to skip it
+                    k;
+            }
+        },// end _.storeAPI
+        storage: function(name) {
+            return _.inherit(_.storageAPI, { items: {}, name: name });
+        },
+        storageAPI: {
+            length: 0,
+            has: function(k){ return this.items.hasOwnProperty(k); },
+            key: function(i) {
+                var c = 0;
+                for (var k in this.items){
+                    if (this.has(k) && i === c++) {
+                        return k;
+                    }
+                }
+            },
+            setItem: function(k, v) {
+                if (!this.has(k)) {
+                    this.length++;
+                }
+                this.items[k] = v;
+            },
+            removeItem: function(k) {
+                if (this.has(k)) {
+                    delete this.items[k];
+                    this.length--;
+                }
+            },
+            getItem: function(k){ return this.has(k) ? this.items[k] : null; },
+            clear: function(){ for (var k in this.items){ this.removeItem(k); } }
+        }// end _.storageAPI
+    };
+
+    var store =
+        // safely set this up (throws error in IE10/32bit mode for local files)
+        _.Store("local", (function(){try{ return localStorage; }catch(e){}})());
+    store.local = store;// for completeness
+    store._ = _;// for extenders and debuggers...
+    // safely setup store.session (throws exception in FF for file:/// urls)
+    store.area("session", (function(){try{ return sessionStorage; }catch(e){}})());
+    store.area("page", _.storage("page"));
+
+    if (typeof define === 'function' && define.amd !== undefined) {
+        define('store2', [], function () {
+            return store;
+        });
+    } else if (module.exports) {
+        module.exports = store;
+    } else {
+        // expose the primary store fn to the global object and save conflicts
+        if (window.store){ _.conflict = window.store; }
+        window.store = store;
+    }
+
+})(commonjsGlobal, commonjsGlobal && commonjsGlobal.define);
+});
+
+class StoreWithExpiry {
+    set(key, value, ttl = 3600 * 1000) {
+        const now = new Date();
+        const item = {
+            value: value,
+            expiry: now.getTime() + ttl,
+        };
+        store2.set(key, item);
+    }
+    get(key) {
+        const item = store2.get(key);
+        if (!item) {
+            return null;
+        }
+        const now = new Date();
+        if (now.getTime() > item.expiry) {
+            store2.remove(key);
+            return null;
+        }
+        return item.value;
+    }
+    remove(key) {
+        store2.remove(key);
+    }
+    clearAll() {
+        store2.clearAll();
+    }
+}
+const storeWithExpiry = new StoreWithExpiry();
+
+const SUCCESS_CODE = 10000;
+const AUTHERROT_CODE = 10005;
+const UNCONFIRMED_MSG = 'UNCONFIRMED';
+const createAxios = ({ baseURL, timeout = 3000, }) => {
+    const instance = axios$1.create({
+        baseURL,
+        timeout,
     });
-    instance.interceptors.request.use(function (config) {
-        if (!config.ignoreAuth) ;
-        return config;
+    instance.interceptors.request.use((config) => {
+        const internalConfig = config;
+        if (!(internalConfig.config && internalConfig.config.ignoreAuth)) {
+            const userInfo = storeWithExpiry.get('userInfo');
+            console.log('userInfo:::', userInfo);
+            if (!userInfo) {
+                // 获取不到用户信息 可能未登录 可能token过期
+                return Promise.reject(new Error(`You do not have permission to request ${config.url}`));
+            }
+            if (userInfo === null || userInfo === void 0 ? void 0 : userInfo.AccessToken) {
+                internalConfig.headers['Auth-Origin'] = 'cognito';
+                internalConfig.headers.Authorization = `${userInfo === null || userInfo === void 0 ? void 0 : userInfo.TokenType} ${userInfo === null || userInfo === void 0 ? void 0 : userInfo.AccessToken}`;
+            }
+            delete internalConfig.config;
+        }
+        return internalConfig;
     });
-    instance.interceptors.response.use(function (response) {
-        var data = response.data;
-        if (data.code === AUTHERROT_CODE) ;
-        return data;
-    }, function (error) {
+    instance.interceptors.response.use((response) => {
+        const { data } = response;
+        if (data.code === SUCCESS_CODE) {
+            return data;
+        }
+        if (data.code === AUTHERROT_CODE) {
+            // 重新登录
+            return Promise.reject(new Error(UNCONFIRMED_MSG));
+        }
+        return Promise.reject(new Error(data.msg));
+    }, (error) => {
         return Promise.reject(error);
     });
     return instance;
 };
 
+const LOGIN_METHODNAME = 'SignIn';
 function dispatchHttpRequest() {
-    var _this = this;
-    var self = this;
-    var fetch = createAxios({
+    const self = this;
+    const fetch = createAxios({
         baseURL: this.config.url,
     });
-    var _keys = Object.keys(httpConfig);
-    _keys.forEach(function (key) {
-        var subKeys = Object.keys(httpConfig[key]);
-        self[key] = subKeys.reduce(function (acc, methodName) {
-            var getConfig = httpConfig[key][methodName];
-            acc[methodName] = function (data) { return __awaiter(_this, void 0, void 0, function () {
-                var config;
-                return __generator(this, function (_a) {
-                    config = getConfig && getConfig(data);
-                    return [2 /*return*/, fetch(config)];
-                });
-            }); };
+    const _keys = Object.keys(httpConfig);
+    _keys.forEach((key) => {
+        const subKeys = Object.keys(httpConfig[key]);
+        self[key] = subKeys.reduce((acc, methodName) => {
+            const getConfig = httpConfig[key][methodName];
+            acc[methodName] = (data) => __awaiter(this, void 0, void 0, function* () {
+                if (typeof getConfig !== 'function') {
+                    throw new Error('getConfig is not a function');
+                }
+                const config = getConfig && getConfig(data);
+                const result = yield fetch(config);
+                if (methodName === LOGIN_METHODNAME) {
+                    const { AccessToken, ExpiresIn, RefreshToken, TokenType } = result.data.AuthenticationResult;
+                    storeWithExpiry.set('userInfo', {
+                        AccessToken,
+                        ExpiresIn,
+                        RefreshToken,
+                        TokenType,
+                    }, ExpiresIn * 1000);
+                }
+                return result;
+            });
             return acc;
         }, {});
     });
 }
 
-var MoobiusSDK = /** @class */ (function () {
-    function MoobiusSDK(instanceConfig) {
+class MoobiusSDK {
+    constructor(instanceConfig) {
         this.defaults = instanceConfig;
         this.config = instanceConfig;
     }
-    MoobiusSDK.prototype.init = function (config) {
+    init(config) {
         this.config = mergeDeep(this.defaults, config);
         console.log('this.config', this.config);
-        var Adapter = adapters$1.getAdapter(config.adapter || this.defaults.adapter);
+        const Adapter = adapters$1.getAdapter(config.adapter || this.defaults.adapter);
         console.log('adapter', Adapter);
         dispatchHttpRequest.call(this);
         return this;
-    };
-    return MoobiusSDK;
-}());
+    }
+}
 
 function createInstance(defaultConfig) {
-    var context = new MoobiusSDK(defaultConfig);
-    var instance = bind$1(MoobiusSDK.prototype.init, context);
+    const context = new MoobiusSDK(defaultConfig);
+    const instance = bind$1(MoobiusSDK.prototype.init, context);
     extend$1(instance, MoobiusSDK.prototype, context, { allOwnKeys: true });
     extend$1(instance, context, null, { allOwnKeys: true });
     console.log('instance', instance);
     return instance;
 }
-var defaults = {
+const defaults = {
     adapter: ['webSocket', 'nodeSocket'],
     url: 'https://api.moobius.net',
 };
-var moobiusSDk = createInstance(defaults);
+const moobiusSDk = createInstance(defaults);
 
 export { moobiusSDk as default };
 //# sourceMappingURL=moobius-api-sdk.js.map

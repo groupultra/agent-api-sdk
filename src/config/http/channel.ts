@@ -45,7 +45,7 @@ export type CHARACTER_ITEM = {
   character_id: string;
   character_context: CURRENTUSERINFO['context'];
 };
-export const Create = (
+export const create = (
   channel_name: string,
   channel_description: string,
 ): BASE_HTTP_RESPONSE<{
@@ -64,7 +64,7 @@ export const Create = (
   },
 });
 
-export const Update = (
+export const update = (
   channel_id: string,
   channel_name: string,
 ): BASE_HTTP_RESPONSE<{
@@ -79,12 +79,12 @@ export const Update = (
   },
 });
 
-export const Popular = (): BASE_HTTP_RESPONSE => ({
+export const popular = (): BASE_HTTP_RESPONSE => ({
   url: '/channel/popular',
   method: 'GET',
 });
 
-export const List = (): BASE_HTTP_RESPONSE => ({
+export const list = (): BASE_HTTP_RESPONSE => ({
   url: '/channel/list',
   method: 'GET',
 });
@@ -93,7 +93,7 @@ export const List = (): BASE_HTTP_RESPONSE => ({
  * [history]
  */
 
-export const HistoryMessage = (params: {
+export const historyMessage = (params: {
   channel_id: string;
   before?: number; // 时间戳 s
   after?: number; // 时间戳 s
