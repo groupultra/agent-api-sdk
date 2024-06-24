@@ -3,6 +3,7 @@
 
 const axios = require('axios');
 const store = require('store2');
+const uuid = require('uuid');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -503,6 +504,21 @@ function dispatchHttpRequest$1() {
     });
 }
 
+const user_login = (access_token = '', loginType = 'cognito') => {
+    var _a;
+    return {
+        type: 'user_login',
+        request_id: uuid.v4(),
+        access_token: ((_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.AccessToken) || access_token,
+        auth_origin: loginType,
+    };
+};
+
+const socketConfig = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    user_login: user_login
+});
+
 const defaultWsOptions = {
     autoReconnect: {
         reconnectMaxCount: 3,
@@ -523,6 +539,30 @@ class MSocket {
         this._socket = null;
         this.reconnectMaxCount = 3;
         this.heartbeatTime = 6000;
+        this.heartbeatTimer = null;
+        this.connect = () => {
+            this.close();
+            this._socket = this.createSocket();
+            if (this._socket) {
+                this.open();
+            }
+            this.error();
+        };
+        this.heartbeat = () => {
+            this.heartbeatTimer = setInterval(() => {
+                var _a;
+                if (((_a = this._socket) === null || _a === void 0 ? void 0 : _a.readyState) === WebSocket.OPEN) {
+                    this._socket.send(JSON.stringify({
+                        type: 'heartbeat',
+                        request_id: uuid.v4(),
+                        body: {},
+                    }));
+                }
+            }, this.heartbeatTime);
+        };
+        this.onMessage = (event) => {
+            console.log('onMessage', event);
+        };
         this.createSocket = () => {
             if (isWebSocketSupported) {
                 return new WebSocket(this.url);
@@ -538,9 +578,24 @@ class MSocket {
         this.url = formatUrl(url, mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.query);
         this.reconnectMaxCount = ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
         this.heartbeatTime = ((_b = mergeOption.heartbeat) === null || _b === void 0 ? void 0 : _b.interval) || 3000;
-        this._socket = this.createSocket();
-        // this.socketCustomMessageEventList = mergeOption?.onMessageEvent || {};
-        // this.connect();
+        this.connect();
+    }
+    open() {
+        this._socket.onopen = () => {
+            console.log('onopen');
+            this.heartbeat();
+        };
+    }
+    error() {
+        this._socket.onerror = (event) => {
+            console.log('onerror', event);
+        };
+    }
+    close() {
+        var _a;
+        (_a = this._socket) === null || _a === void 0 ? void 0 : _a.close();
+        clearInterval(this.heartbeatTimer);
+        this._socket = null;
     }
 }
 function createSocket(url, option) {
@@ -552,6 +607,14 @@ function dispatchHttpRequest() {
     self.socket = createSocket(this.config.wsUrl, {
         onMessageEvent: {},
     });
+    self.send = (type, data) => __awaiter(this, void 0, void 0, function* () {
+        const typeName = Object.keys(socketConfig);
+        if (!typeName.includes(type)) {
+            throw new Error(`${type}: type is not exist`);
+        }
+        socketConfig[type];
+    });
+    console.log(socketConfig);
 }
 
 class MoobiusSDK {

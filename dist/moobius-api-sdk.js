@@ -5016,6 +5016,79 @@
         });
     }
 
+    // Unique ID creation requires a high quality random # generator. In the browser we therefore
+    // require the crypto API and do not support built-in fallback to lower quality random number
+    // generators (like Math.random()).
+    var getRandomValues;
+    var rnds8 = new Uint8Array(16);
+    function rng() {
+      // lazy load so that environments that need to polyfill have a chance to do so
+      if (!getRandomValues) {
+        // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation.
+        getRandomValues = typeof crypto !== 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto);
+        if (!getRandomValues) {
+          throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
+        }
+      }
+      return getRandomValues(rnds8);
+    }
+
+    /**
+     * Convert array of 16 byte values to UUID string format of the form:
+     * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+     */
+
+    var byteToHex = [];
+    for (var i = 0; i < 256; ++i) {
+      byteToHex.push((i + 0x100).toString(16).slice(1));
+    }
+    function unsafeStringify(arr) {
+      var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      // Note: Be careful editing this code!  It's been tuned for performance
+      // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
+      return byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]];
+    }
+
+    var randomUUID = typeof crypto !== 'undefined' && crypto.randomUUID && crypto.randomUUID.bind(crypto);
+    var _native = {
+      randomUUID: randomUUID
+    };
+
+    function v4(options, buf, offset) {
+      if (_native.randomUUID && !buf && !options) {
+        return _native.randomUUID();
+      }
+      options = options || {};
+      var rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
+      rnds[6] = rnds[6] & 0x0f | 0x40;
+      rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
+
+      if (buf) {
+        offset = offset || 0;
+        for (var i = 0; i < 16; ++i) {
+          buf[offset + i] = rnds[i];
+        }
+        return buf;
+      }
+      return unsafeStringify(rnds);
+    }
+
+    const user_login = (access_token = '', loginType = 'cognito') => {
+        var _a;
+        return {
+            type: 'user_login',
+            request_id: v4(),
+            access_token: ((_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.AccessToken) || access_token,
+            auth_origin: loginType,
+        };
+    };
+
+    var socketConfig = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        user_login: user_login
+    });
+
     const defaultWsOptions = {
         autoReconnect: {
             reconnectMaxCount: 3,
@@ -5036,6 +5109,30 @@
             this._socket = null;
             this.reconnectMaxCount = 3;
             this.heartbeatTime = 6000;
+            this.heartbeatTimer = null;
+            this.connect = () => {
+                this.close();
+                this._socket = this.createSocket();
+                if (this._socket) {
+                    this.open();
+                }
+                this.error();
+            };
+            this.heartbeat = () => {
+                this.heartbeatTimer = setInterval(() => {
+                    var _a;
+                    if (((_a = this._socket) === null || _a === void 0 ? void 0 : _a.readyState) === WebSocket.OPEN) {
+                        this._socket.send(JSON.stringify({
+                            type: 'heartbeat',
+                            request_id: v4(),
+                            body: {},
+                        }));
+                    }
+                }, this.heartbeatTime);
+            };
+            this.onMessage = (event) => {
+                console.log('onMessage', event);
+            };
             this.createSocket = () => {
                 if (isWebSocketSupported) {
                     return new WebSocket(this.url);
@@ -5051,9 +5148,24 @@
             this.url = formatUrl(url, mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.query);
             this.reconnectMaxCount = ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
             this.heartbeatTime = ((_b = mergeOption.heartbeat) === null || _b === void 0 ? void 0 : _b.interval) || 3000;
-            this._socket = this.createSocket();
-            // this.socketCustomMessageEventList = mergeOption?.onMessageEvent || {};
-            // this.connect();
+            this.connect();
+        }
+        open() {
+            this._socket.onopen = () => {
+                console.log('onopen');
+                this.heartbeat();
+            };
+        }
+        error() {
+            this._socket.onerror = (event) => {
+                console.log('onerror', event);
+            };
+        }
+        close() {
+            var _a;
+            (_a = this._socket) === null || _a === void 0 ? void 0 : _a.close();
+            clearInterval(this.heartbeatTimer);
+            this._socket = null;
         }
     }
     function createSocket(url, option) {
@@ -5065,6 +5177,14 @@
         self.socket = createSocket(this.config.wsUrl, {
             onMessageEvent: {},
         });
+        self.send = (type, data) => __awaiter(this, void 0, void 0, function* () {
+            const typeName = Object.keys(socketConfig);
+            if (!typeName.includes(type)) {
+                throw new Error(`${type}: type is not exist`);
+            }
+            socketConfig[type];
+        });
+        console.log(socketConfig);
     }
 
     class MoobiusSDK {
