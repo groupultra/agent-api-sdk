@@ -95,3 +95,22 @@ export const kindOf = ((cache) => (thing: any) => {
   const str = toString.call(thing);
   return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
 })(Object.create(null));
+
+export const formatUrl = (
+  url: string,
+  query: Record<string, string>,
+): string => {
+  if (url && query) {
+    const hasQuery = url?.includes('?');
+    url += Object.keys(query).length
+      ? `${hasQuery ? '&' : '?'}${Object.keys(query)
+          .map((key) => `${key}=${query[key]}`)
+          .join('&')}`
+      : '';
+  }
+  return url;
+};
+
+export const isNodeEnv = () => {
+  return typeof process !== 'undefined' && kindOf(process) === 'process';
+};

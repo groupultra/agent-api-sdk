@@ -14,7 +14,8 @@ function createInstance(defaultConfig: MoobiusBasicConfig) {
 
 const defaults = {
   adapter: ['webSocket', 'nodeSocket'],
-  url: 'https://api.moobius.net',
+  httpUrl: 'https://api.moobius.net',
+  wsUrl: 'wss://ws.moobius.net',
 };
 
 const moobiusSDk = createInstance(defaults);

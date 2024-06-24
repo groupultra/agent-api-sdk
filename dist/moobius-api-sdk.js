@@ -83,19 +83,20 @@
         const str = toString.call(thing);
         return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
     })(Object.create(null));
-
-    var browser = function browser() {
-      throw new Error('ws does not work in the browser. Browser clients must use the native ' + 'WebSocket object');
+    const formatUrl = (url, query) => {
+        if (url && query) {
+            const hasQuery = url === null || url === void 0 ? void 0 : url.includes('?');
+            url += Object.keys(query).length
+                ? `${hasQuery ? '&' : '?'}${Object.keys(query)
+                .map((key) => `${key}=${query[key]}`)
+                .join('&')}`
+                : '';
+        }
+        return url;
     };
-
-    const isNodeSocketSupported = typeof process !== 'undefined' && kindOf$1(process) === 'process';
-    var nodeSocket = isNodeSocketSupported &&
-        class MSocket {
-            constructor() {
-                this.type = 'node';
-                console.log('node', this, browser);
-            }
-        };
+    const isNodeEnv = () => {
+        return typeof process !== 'undefined' && kindOf$1(process) === 'process';
+    };
 
     function _AsyncGenerator(e) {
       var r, t;
@@ -770,303 +771,6 @@
     typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
       var e = new Error(message);
       return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-    };
-
-    // Unique ID creation requires a high quality random # generator. In the browser we therefore
-    // require the crypto API and do not support built-in fallback to lower quality random number
-    // generators (like Math.random()).
-    var getRandomValues;
-    var rnds8 = new Uint8Array(16);
-    function rng() {
-      // lazy load so that environments that need to polyfill have a chance to do so
-      if (!getRandomValues) {
-        // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation.
-        getRandomValues = typeof crypto !== 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto);
-        if (!getRandomValues) {
-          throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
-        }
-      }
-      return getRandomValues(rnds8);
-    }
-
-    /**
-     * Convert array of 16 byte values to UUID string format of the form:
-     * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-     */
-
-    var byteToHex = [];
-    for (var i = 0; i < 256; ++i) {
-      byteToHex.push((i + 0x100).toString(16).slice(1));
-    }
-    function unsafeStringify(arr) {
-      var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-      // Note: Be careful editing this code!  It's been tuned for performance
-      // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
-      return byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]];
-    }
-
-    var randomUUID = typeof crypto !== 'undefined' && crypto.randomUUID && crypto.randomUUID.bind(crypto);
-    var _native = {
-      randomUUID: randomUUID
-    };
-
-    function v4(options, buf, offset) {
-      if (_native.randomUUID && !buf && !options) {
-        return _native.randomUUID();
-      }
-      options = options || {};
-      var rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-
-      rnds[6] = rnds[6] & 0x0f | 0x40;
-      rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
-
-      if (buf) {
-        offset = offset || 0;
-        for (var i = 0; i < 16; ++i) {
-          buf[offset + i] = rnds[i];
-        }
-        return buf;
-      }
-      return unsafeStringify(rnds);
-    }
-
-    const Heartbeat = () => {
-        return {
-            type: 'heartbeat',
-            request_id: v4(),
-            body: {},
-        };
-    };
-
-    var _a;
-    const isWebSocketSupported = typeof WebSocket !== 'undefined';
-    var webSocket = isWebSocketSupported && (_a = class MSocket {
-            constructor(url, option) {
-                var _a, _b;
-                this.type = 'client';
-                this.socket = null;
-                this.reconnectMaxCount = 3;
-                this.heartbeatTime = 6000;
-                this.requestCallbacks = {};
-                this.heartbeatTimer = null;
-                this.connect = () => {
-                    this.close();
-                    this.socket = new WebSocket(this.url);
-                    this.onError();
-                    this.onOpen();
-                    this.onMessage();
-                };
-                this.login = () => __awaiter(this, void 0, void 0, function* () {
-                });
-                this.onMessage = () => {
-                    this.socket.onmessage = (event) => __awaiter(this, void 0, void 0, function* () {
-                        try {
-                            const data = JSON.parse(event === null || event === void 0 ? void 0 : event.data);
-                            const { type, body } = data;
-                            const { request_id, status, origin_type, context } = body;
-                            // 分为两大类 copy是服务端针对requestid作出的响应
-                            if (type === 'copy') {
-                                if (request_id && this.requestCallbacks[request_id]) {
-                                    if (!status) {
-                                        // 失败
-                                        console.error(`${origin_type} : ${context.message}`);
-                                        if (context.message.includes('access_token') ||
-                                            context.message.includes('login yet')) {
-                                            // console.log(context.message);
-                                            // const store: Store = getStore()!;
-                                            // await store.user.fetchSignOut();
-                                            console.log('refresh token');
-                                        }
-                                    }
-                                    if (origin_type === 'user_login') {
-                                        // 修改登录状态处理未登录的时候发送事件
-                                        // WS.isLoggedIn = status;
-                                        this.processMessageQueue();
-                                    }
-                                    this.requestCallbacks[request_id](data);
-                                    delete this.requestCallbacks[request_id];
-                                }
-                                return;
-                            }
-                            // 主动update的message不能使用对应的requestid
-                            if (this.socketCustomMessageEventList[type]) {
-                                this.socketCustomMessageEventList[type](data);
-                            }
-                        }
-                        catch (error) {
-                            console.error(error);
-                        }
-                    });
-                };
-                this.processMessageQueue = () => {
-                    // while (WS.unloginMessageQueue.length > 0) {
-                    //   const { data, callback } = WS.unloginMessageQueue.shift();
-                    //   this.send(data, callback);
-                    // }
-                };
-                this.ignoreLoginMessage = (data) => {
-                    return data.type === 'user_login' || data.type === 'ping';
-                };
-                this.reconnect = () => {
-                    return new Promise((resolve, reject) => {
-                        this.connect();
-                        resolve({});
-                    });
-                };
-                const mergeOption = mergeDeep({
-                    autoReconnect: {
-                        reconnectMaxCount: 3,
-                    },
-                    heartbeat: {
-                        interval: 10000,
-                    },
-                    query: {},
-                }, option);
-                console.log(mergeOption);
-                this.url = this.formatUrl(url, mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.query);
-                this.reconnectMaxCount =
-                    ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
-                this.heartbeatTime = ((_b = mergeOption.heartbeat) === null || _b === void 0 ? void 0 : _b.interval) || 3000;
-                this.socketCustomMessageEventList = (mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.onMessageEvent) || {};
-                this.connect();
-            }
-            onOpen() {
-                if (this.socket) {
-                    this.socket.onopen = () => {
-                        this.login();
-                        if (this.heartbeatTime) {
-                            this.startHeartbeat();
-                        }
-                    };
-                }
-            }
-            startHeartbeat() {
-                const int = this.heartbeatTime;
-                this.heartbeatTimer = setInterval(() => {
-                    this.send(Heartbeat());
-                }, int);
-            }
-            send(data, callback = () => { }) {
-                return new Promise((resolve, reject) => {
-                    if (!this.socket) {
-                        reject(new Error('socket is null'));
-                        return;
-                    }
-                    const trySend = () => {
-                        if (!this.socket) {
-                            reject(new Error('socket is null'));
-                            return;
-                        }
-                        // const isIgnoreLoginMessage = this.ignoreLoginMessage(data);
-                        // console.log(WS.isLoggedIn, isIgnoreLoginMessage)
-                        // if (!isIgnoreLoginMessage && !WS.isLoggedIn) {
-                        //   WS.unloginMessageQueue.push({
-                        //     data,
-                        //     callback,
-                        //   });
-                        //   return;
-                        // }
-                        if (this.socket.readyState === this.socket.OPEN) {
-                            try {
-                                // 发送消息前收集onMessage的对应回调函数
-                                this.requestCallbacks[data.request_id || v4()] = (response) => {
-                                    callback(response);
-                                    resolve(response);
-                                };
-                                this.socket.send(JSON.stringify(data));
-                                resolve(); // 消息成功发送
-                            }
-                            catch (error) {
-                                reject(error); // 发送过程中出现错误
-                            }
-                        }
-                        else if ([this.socket.CLOSING, this.socket.CLOSED].includes(this.socket.readyState)) {
-                            this.reconnect()
-                                .then(() => {
-                                setTimeout(trySend, 1000); // 重连成功后重试发送
-                            })
-                                .catch(reject); // 重连失败
-                        }
-                        else if (this.socket.readyState === this.socket.CONNECTING) {
-                            setTimeout(trySend, 1000); // 1秒后重试
-                        }
-                    };
-                    trySend();
-                });
-            }
-            close() {
-                var _a;
-                (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
-                clearInterval(this.heartbeatTimer);
-                this.socket = null;
-            }
-            onError() {
-                if (this.socket) {
-                    this.socket.onerror = (event) => {
-                        console.log('socket:error:event:', event);
-                    };
-                }
-            }
-            formatUrl(url, query) {
-                if (url && query) {
-                    const hasQuery = url === null || url === void 0 ? void 0 : url.includes('?');
-                    url += Object.keys(query).length
-                        ? `${hasQuery ? '&' : '?'}${Object.keys(query)
-                        .map((key) => `${key}=${query[key]}`)
-                        .join('&')}`
-                        : '';
-                }
-                return url;
-            }
-        },
-        _a.isLoggedIn = false,
-        _a.unloginMessageQueue = [],
-        _a);
-
-    const knownAdapters$1 = {
-        webSocket,
-        nodeSocket,
-    };
-    const isResolvedHandle$1 = (adapter) => isFunction$1(adapter) || adapter === null || adapter === false;
-    const renderReason$1 = (reason) => `- ${reason}`;
-    var adapters$1 = {
-        getAdapter: (adapters) => {
-            let _adapters = isArray$1(adapters) ? adapters : [adapters];
-            const { length } = adapters;
-            let nameOrAdapter;
-            let adapter;
-            const rejectedReasons = {};
-            for (let i = 0; i < length; i++) {
-                nameOrAdapter = _adapters[i];
-                let id;
-                adapter = nameOrAdapter;
-                if (!isResolvedHandle$1(nameOrAdapter)) {
-                    adapter =
-                        knownAdapters$1[(id = String(nameOrAdapter))];
-                    if (adapter === undefined) {
-                        console.error(`Unknown adapter '${id}'`);
-                    }
-                }
-                if (adapter) {
-                    break;
-                }
-                rejectedReasons[id || '#' + i] = adapter;
-            }
-            if (!adapter) {
-                const reasons = Object.entries(rejectedReasons).map(([id, state]) => `adapter ${id} ` +
-                    (state === false
-                        ? 'is not supported by the environment'
-                        : 'is not available in the build'));
-                let s = length
-                    ? reasons.length > 1
-                        ? 'since :\n' + reasons.map(renderReason$1).join('\n')
-                        : ' ' + renderReason$1(reasons[0])
-                    : 'as no adapter specified';
-                console.error(`There is no suitable adapter to dispatch the request ` + s, 'ERR_NOT_SUPPORT');
-            }
-            return adapter;
-        },
-        adapters: knownAdapters$1,
     };
 
     const signUp = (params) => ({
@@ -5226,7 +4930,7 @@
                 this._store.clearAll();
             };
             this._store = store2;
-            if (typeof process !== 'undefined' && kindOf$1(process) === 'process') {
+            if (isNodeEnv()) {
                 // eslint-disable-next-line @typescript-eslint/no-var-requires
                 const LocalStorage = require('node-localstorage').LocalStorage;
                 this._store.localstorage = new LocalStorage('./scratch');
@@ -5278,10 +4982,10 @@
     };
 
     const LOGIN_METHODNAME = 'signIn';
-    function dispatchHttpRequest() {
+    function dispatchHttpRequest$1() {
         const self = this;
         const fetch = createAxios({
-            baseURL: this.config.url,
+            baseURL: this.config.httpUrl,
         });
         const _keys = Object.keys(httpConfig);
         _keys.forEach((key) => {
@@ -5312,6 +5016,57 @@
         });
     }
 
+    const defaultWsOptions = {
+        autoReconnect: {
+            reconnectMaxCount: 3,
+        },
+        heartbeat: {
+            interval: 10000,
+        },
+        query: {},
+        onMessageEvent: {},
+    };
+
+    const isWebSocketSupported = typeof WebSocket !== 'undefined';
+    class MSocket {
+        constructor(url, option) {
+            var _a, _b;
+            this.type = 'client';
+            this.url = '';
+            this._socket = null;
+            this.reconnectMaxCount = 3;
+            this.heartbeatTime = 6000;
+            this.createSocket = () => {
+                if (isWebSocketSupported) {
+                    return new WebSocket(this.url);
+                }
+                else if (isNodeEnv()) {
+                    // eslint-disable-next-line @typescript-eslint/no-var-requires
+                    const WebSocket = require('ws');
+                    return new WebSocket(this.url);
+                }
+                return null;
+            };
+            const mergeOption = mergeDeep(defaultWsOptions, option);
+            this.url = formatUrl(url, mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.query);
+            this.reconnectMaxCount = ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
+            this.heartbeatTime = ((_b = mergeOption.heartbeat) === null || _b === void 0 ? void 0 : _b.interval) || 3000;
+            this._socket = this.createSocket();
+            // this.socketCustomMessageEventList = mergeOption?.onMessageEvent || {};
+            // this.connect();
+        }
+    }
+    function createSocket(url, option) {
+        return new MSocket(url, option);
+    }
+
+    function dispatchHttpRequest() {
+        const self = this;
+        self.socket = createSocket(this.config.wsUrl, {
+            onMessageEvent: {},
+        });
+    }
+
     class MoobiusSDK {
         constructor(instanceConfig) {
             this.defaults = instanceConfig;
@@ -5319,9 +5074,7 @@
         }
         init(config) {
             this.config = mergeDeep(this.defaults, config);
-            console.log('this.config', this.config);
-            const Adapter = adapters$1.getAdapter(config.adapter || this.defaults.adapter);
-            console.log('adapter', Adapter);
+            dispatchHttpRequest$1.call(this);
             dispatchHttpRequest.call(this);
             return this;
         }
@@ -5337,7 +5090,8 @@
     }
     const defaults = {
         adapter: ['webSocket', 'nodeSocket'],
-        url: 'https://api.moobius.net',
+        httpUrl: 'https://api.moobius.net',
+        wsUrl: 'wss://ws.moobius.net',
     };
     const moobiusSDk = createInstance(defaults);
 

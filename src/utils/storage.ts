@@ -1,4 +1,4 @@
-import { kindOf } from '@/utils/index';
+import { isNodeEnv } from '@/utils/index';
 import store from 'store2';
 interface StoreItem<T> {
   value: T;
@@ -9,7 +9,7 @@ class StoreWithExpiry {
   private _store: any;
   constructor() {
     this._store = store;
-    if (typeof process !== 'undefined' && kindOf(process) === 'process') {
+    if (isNodeEnv()) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const LocalStorage = require('node-localstorage').LocalStorage;
       this._store.localstorage = new LocalStorage('./scratch');

@@ -1,4 +1,5 @@
 export type MoobiusBasicConfig = {
-  url: string;
+  httpUrl: string;
+  wsUrl: string;
   adapter: any;
 };

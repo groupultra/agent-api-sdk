@@ -1,14 +1,11 @@
 // Moobius-js-api-sdk v1.0.0 Copyright (c) 2024 moobius and contributors
 'use strict';
 
-const WebSocket$1 = require('ws');
-const uuid = require('uuid');
 const axios = require('axios');
 const store = require('store2');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
-const WebSocket__default = /*#__PURE__*/_interopDefaultLegacy(WebSocket$1);
 const axios__default = /*#__PURE__*/_interopDefaultLegacy(axios);
 const store__default = /*#__PURE__*/_interopDefaultLegacy(store);
 
@@ -90,15 +87,20 @@ const kindOf = ((cache) => (thing) => {
     const str = toString.call(thing);
     return cache[str] || (cache[str] = str.slice(8, -1).toLowerCase());
 })(Object.create(null));
-
-const isNodeSocketSupported = typeof process !== 'undefined' && kindOf(process) === 'process';
-const nodeSocket = isNodeSocketSupported &&
-    class MSocket {
-        constructor() {
-            this.type = 'node';
-            console.log('node', this, WebSocket__default["default"]);
-        }
-    };
+const formatUrl = (url, query) => {
+    if (url && query) {
+        const hasQuery = url === null || url === void 0 ? void 0 : url.includes('?');
+        url += Object.keys(query).length
+            ? `${hasQuery ? '&' : '?'}${Object.keys(query)
+                .map((key) => `${key}=${query[key]}`)
+                .join('&')}`
+            : '';
+    }
+    return url;
+};
+const isNodeEnv = () => {
+    return typeof process !== 'undefined' && kindOf(process) === 'process';
+};
 
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
@@ -128,245 +130,6 @@ function __awaiter(thisArg, _arguments, P, generator) {
 typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
     var e = new Error(message);
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-};
-
-const Heartbeat = () => {
-    return {
-        type: 'heartbeat',
-        request_id: uuid.v4(),
-        body: {},
-    };
-};
-
-var _a;
-const isWebSocketSupported = typeof WebSocket !== 'undefined';
-const webSocket = isWebSocketSupported && (_a = class MSocket {
-        constructor(url, option) {
-            var _a, _b;
-            this.type = 'client';
-            this.socket = null;
-            this.reconnectMaxCount = 3;
-            this.heartbeatTime = 6000;
-            this.requestCallbacks = {};
-            this.heartbeatTimer = null;
-            this.connect = () => {
-                this.close();
-                this.socket = new WebSocket(this.url);
-                this.onError();
-                this.onOpen();
-                this.onMessage();
-            };
-            this.login = () => __awaiter(this, void 0, void 0, function* () {
-            });
-            this.onMessage = () => {
-                this.socket.onmessage = (event) => __awaiter(this, void 0, void 0, function* () {
-                    try {
-                        const data = JSON.parse(event === null || event === void 0 ? void 0 : event.data);
-                        const { type, body } = data;
-                        const { request_id, status, origin_type, context } = body;
-                        // 分为两大类 copy是服务端针对requestid作出的响应
-                        if (type === 'copy') {
-                            if (request_id && this.requestCallbacks[request_id]) {
-                                if (!status) {
-                                    // 失败
-                                    console.error(`${origin_type} : ${context.message}`);
-                                    if (context.message.includes('access_token') ||
-                                        context.message.includes('login yet')) {
-                                        // console.log(context.message);
-                                        // const store: Store = getStore()!;
-                                        // await store.user.fetchSignOut();
-                                        console.log('refresh token');
-                                    }
-                                }
-                                if (origin_type === 'user_login') {
-                                    // 修改登录状态处理未登录的时候发送事件
-                                    // WS.isLoggedIn = status;
-                                    this.processMessageQueue();
-                                }
-                                this.requestCallbacks[request_id](data);
-                                delete this.requestCallbacks[request_id];
-                            }
-                            return;
-                        }
-                        // 主动update的message不能使用对应的requestid
-                        if (this.socketCustomMessageEventList[type]) {
-                            this.socketCustomMessageEventList[type](data);
-                        }
-                    }
-                    catch (error) {
-                        console.error(error);
-                    }
-                });
-            };
-            this.processMessageQueue = () => {
-                // while (WS.unloginMessageQueue.length > 0) {
-                //   const { data, callback } = WS.unloginMessageQueue.shift();
-                //   this.send(data, callback);
-                // }
-            };
-            this.ignoreLoginMessage = (data) => {
-                return data.type === 'user_login' || data.type === 'ping';
-            };
-            this.reconnect = () => {
-                return new Promise((resolve, reject) => {
-                    this.connect();
-                    resolve({});
-                });
-            };
-            const mergeOption = mergeDeep({
-                autoReconnect: {
-                    reconnectMaxCount: 3,
-                },
-                heartbeat: {
-                    interval: 10000,
-                },
-                query: {},
-            }, option);
-            console.log(mergeOption);
-            this.url = this.formatUrl(url, mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.query);
-            this.reconnectMaxCount =
-                ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
-            this.heartbeatTime = ((_b = mergeOption.heartbeat) === null || _b === void 0 ? void 0 : _b.interval) || 3000;
-            this.socketCustomMessageEventList = (mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.onMessageEvent) || {};
-            this.connect();
-        }
-        onOpen() {
-            if (this.socket) {
-                this.socket.onopen = () => {
-                    this.login();
-                    if (this.heartbeatTime) {
-                        this.startHeartbeat();
-                    }
-                };
-            }
-        }
-        startHeartbeat() {
-            const int = this.heartbeatTime;
-            this.heartbeatTimer = setInterval(() => {
-                this.send(Heartbeat());
-            }, int);
-        }
-        send(data, callback = () => { }) {
-            return new Promise((resolve, reject) => {
-                if (!this.socket) {
-                    reject(new Error('socket is null'));
-                    return;
-                }
-                const trySend = () => {
-                    if (!this.socket) {
-                        reject(new Error('socket is null'));
-                        return;
-                    }
-                    // const isIgnoreLoginMessage = this.ignoreLoginMessage(data);
-                    // console.log(WS.isLoggedIn, isIgnoreLoginMessage)
-                    // if (!isIgnoreLoginMessage && !WS.isLoggedIn) {
-                    //   WS.unloginMessageQueue.push({
-                    //     data,
-                    //     callback,
-                    //   });
-                    //   return;
-                    // }
-                    if (this.socket.readyState === this.socket.OPEN) {
-                        try {
-                            // 发送消息前收集onMessage的对应回调函数
-                            this.requestCallbacks[data.request_id || uuid.v4()] = (response) => {
-                                callback(response);
-                                resolve(response);
-                            };
-                            this.socket.send(JSON.stringify(data));
-                            resolve(); // 消息成功发送
-                        }
-                        catch (error) {
-                            reject(error); // 发送过程中出现错误
-                        }
-                    }
-                    else if ([this.socket.CLOSING, this.socket.CLOSED].includes(this.socket.readyState)) {
-                        this.reconnect()
-                            .then(() => {
-                            setTimeout(trySend, 1000); // 重连成功后重试发送
-                        })
-                            .catch(reject); // 重连失败
-                    }
-                    else if (this.socket.readyState === this.socket.CONNECTING) {
-                        setTimeout(trySend, 1000); // 1秒后重试
-                    }
-                };
-                trySend();
-            });
-        }
-        close() {
-            var _a;
-            (_a = this.socket) === null || _a === void 0 ? void 0 : _a.close();
-            clearInterval(this.heartbeatTimer);
-            this.socket = null;
-        }
-        onError() {
-            if (this.socket) {
-                this.socket.onerror = (event) => {
-                    console.log('socket:error:event:', event);
-                };
-            }
-        }
-        formatUrl(url, query) {
-            if (url && query) {
-                const hasQuery = url === null || url === void 0 ? void 0 : url.includes('?');
-                url += Object.keys(query).length
-                    ? `${hasQuery ? '&' : '?'}${Object.keys(query)
-                        .map((key) => `${key}=${query[key]}`)
-                        .join('&')}`
-                    : '';
-            }
-            return url;
-        }
-    },
-    _a.isLoggedIn = false,
-    _a.unloginMessageQueue = [],
-    _a);
-
-const knownAdapters = {
-    webSocket,
-    nodeSocket,
-};
-const isResolvedHandle = (adapter) => isFunction(adapter) || adapter === null || adapter === false;
-const renderReason = (reason) => `- ${reason}`;
-const adapters = {
-    getAdapter: (adapters) => {
-        let _adapters = isArray(adapters) ? adapters : [adapters];
-        const { length } = adapters;
-        let nameOrAdapter;
-        let adapter;
-        const rejectedReasons = {};
-        for (let i = 0; i < length; i++) {
-            nameOrAdapter = _adapters[i];
-            let id;
-            adapter = nameOrAdapter;
-            if (!isResolvedHandle(nameOrAdapter)) {
-                adapter =
-                    knownAdapters[(id = String(nameOrAdapter))];
-                if (adapter === undefined) {
-                    console.error(`Unknown adapter '${id}'`);
-                }
-            }
-            if (adapter) {
-                break;
-            }
-            rejectedReasons[id || '#' + i] = adapter;
-        }
-        if (!adapter) {
-            const reasons = Object.entries(rejectedReasons).map(([id, state]) => `adapter ${id} ` +
-                (state === false
-                    ? 'is not supported by the environment'
-                    : 'is not available in the build'));
-            let s = length
-                ? reasons.length > 1
-                    ? 'since :\n' + reasons.map(renderReason).join('\n')
-                    : ' ' + renderReason(reasons[0])
-                : 'as no adapter specified';
-            console.error(`There is no suitable adapter to dispatch the request ` + s, 'ERR_NOT_SUPPORT');
-        }
-        return adapter;
-    },
-    adapters: knownAdapters,
 };
 
 const signUp = (params) => ({
@@ -654,7 +417,7 @@ class StoreWithExpiry {
             this._store.clearAll();
         };
         this._store = store__default["default"];
-        if (typeof process !== 'undefined' && kindOf(process) === 'process') {
+        if (isNodeEnv()) {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const LocalStorage = require('node-localstorage').LocalStorage;
             this._store.localstorage = new LocalStorage('./scratch');
@@ -706,10 +469,10 @@ const createAxios = ({ baseURL, timeout = 3000, }) => {
 };
 
 const LOGIN_METHODNAME = 'signIn';
-function dispatchHttpRequest() {
+function dispatchHttpRequest$1() {
     const self = this;
     const fetch = createAxios({
-        baseURL: this.config.url,
+        baseURL: this.config.httpUrl,
     });
     const _keys = Object.keys(httpConfig);
     _keys.forEach((key) => {
@@ -740,6 +503,57 @@ function dispatchHttpRequest() {
     });
 }
 
+const defaultWsOptions = {
+    autoReconnect: {
+        reconnectMaxCount: 3,
+    },
+    heartbeat: {
+        interval: 10000,
+    },
+    query: {},
+    onMessageEvent: {},
+};
+
+const isWebSocketSupported = typeof WebSocket !== 'undefined';
+class MSocket {
+    constructor(url, option) {
+        var _a, _b;
+        this.type = 'client';
+        this.url = '';
+        this._socket = null;
+        this.reconnectMaxCount = 3;
+        this.heartbeatTime = 6000;
+        this.createSocket = () => {
+            if (isWebSocketSupported) {
+                return new WebSocket(this.url);
+            }
+            else if (isNodeEnv()) {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                const WebSocket = require('ws');
+                return new WebSocket(this.url);
+            }
+            return null;
+        };
+        const mergeOption = mergeDeep(defaultWsOptions, option);
+        this.url = formatUrl(url, mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.query);
+        this.reconnectMaxCount = ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
+        this.heartbeatTime = ((_b = mergeOption.heartbeat) === null || _b === void 0 ? void 0 : _b.interval) || 3000;
+        this._socket = this.createSocket();
+        // this.socketCustomMessageEventList = mergeOption?.onMessageEvent || {};
+        // this.connect();
+    }
+}
+function createSocket(url, option) {
+    return new MSocket(url, option);
+}
+
+function dispatchHttpRequest() {
+    const self = this;
+    self.socket = createSocket(this.config.wsUrl, {
+        onMessageEvent: {},
+    });
+}
+
 class MoobiusSDK {
     constructor(instanceConfig) {
         this.defaults = instanceConfig;
@@ -747,9 +561,7 @@ class MoobiusSDK {
     }
     init(config) {
         this.config = mergeDeep(this.defaults, config);
-        console.log('this.config', this.config);
-        const Adapter = adapters.getAdapter(config.adapter || this.defaults.adapter);
-        console.log('adapter', Adapter);
+        dispatchHttpRequest$1.call(this);
         dispatchHttpRequest.call(this);
         return this;
     }
@@ -765,7 +577,8 @@ function createInstance(defaultConfig) {
 }
 const defaults = {
     adapter: ['webSocket', 'nodeSocket'],
-    url: 'https://api.moobius.net',
+    httpUrl: 'https://api.moobius.net',
+    wsUrl: 'wss://ws.moobius.net',
 };
 const moobiusSDk = createInstance(defaults);
 

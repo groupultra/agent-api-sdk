@@ -21,7 +21,7 @@ const LOGIN_METHODNAME = 'signIn';
 export default function dispatchHttpRequest(this: MoobiusSDK) {
   const self = this as MoobiusSDKWithIndex;
   const fetch = createFetch({
-    baseURL: this.config.url,
+    baseURL: this.config.httpUrl,
   });
   const _keys = Object.keys(httpConfig) as TYPENAME[];
 
