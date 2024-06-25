@@ -67,6 +67,7 @@ const buildConfig = ({
 
       ...(config.plugins || []),
     ],
+    external: ['node-localstorage', 'ws'],
   });
 
   const configs = [build({ minified: false })];

@@ -1,5 +1,7 @@
 import { formatUrl, isNodeEnv, mergeDeep } from '@/utils/index';
+
 import { v4 } from 'uuid';
+
 import type { IWSOptions } from './socket.type';
 import { defaultWsOptions } from './socket.type';
 
@@ -18,9 +20,9 @@ export class MSocket {
     this.heartbeatTime = mergeOption.heartbeat?.interval || 3000;
     this.connect();
   }
-  connect = () => {
+  connect = async () => {
     this.close();
-    this._socket = this.createSocket();
+    this._socket = await this.createSocket();
     if (this._socket) {
       this.open();
     }
@@ -58,12 +60,11 @@ export class MSocket {
   onMessage = (event: MessageEvent) => {
     console.log('onMessage', event);
   };
-  createSocket = () => {
+  createSocket = async () => {
     if (isWebSocketSupported) {
       return new WebSocket(this.url);
     } else if (isNodeEnv()) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const WebSocket = require('ws');
+      const WebSocket = (await import('ws')).default;
       return new WebSocket(this.url);
     }
     return null;

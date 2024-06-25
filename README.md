@@ -7,13 +7,13 @@
 #### Using npm:
 
 ```
-npm install moobius-agent-api
+npm install moobius-api-sdk
 ```
 
 #### Using yarn:
 
 ```
-yarn install moobius-agent-api
+npm install moobius-api-sdk
 ```
 
 ## Example

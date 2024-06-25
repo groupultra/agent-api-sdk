@@ -7,6 +7,24 @@ const uuid = require('uuid');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
+function _interopNamespace(e) {
+    if (e && e.__esModule) return e;
+    const n = Object.create(null);
+    if (e) {
+        for (const k in e) {
+            if (k !== 'default') {
+                const d = Object.getOwnPropertyDescriptor(e, k);
+                Object.defineProperty(n, k, d.get ? d : {
+                    enumerable: true,
+                    get: function () { return e[k]; }
+                });
+            }
+        }
+    }
+    n["default"] = e;
+    return Object.freeze(n);
+}
+
 const axios__default = /*#__PURE__*/_interopDefaultLegacy(axios);
 const store__default = /*#__PURE__*/_interopDefaultLegacy(store);
 
@@ -419,11 +437,10 @@ class StoreWithExpiry {
         };
         this._store = store__default["default"];
         if (isNodeEnv()) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const LocalStorage = require('node-localstorage').LocalStorage;
-            this._store.localstorage = new LocalStorage('./scratch');
+            Promise.resolve().then(function () { return /*#__PURE__*/_interopNamespace(require('node-localstorage')); }).then(({ LocalStorage }) => {
+                this._store.localstorage = new LocalStorage('./scratch');
+            });
         }
-        // console.log('constructor', this._store);
     }
 }
 const storeWithExpiry = new StoreWithExpiry();
@@ -540,14 +557,14 @@ class MSocket {
         this.reconnectMaxCount = 3;
         this.heartbeatTime = 6000;
         this.heartbeatTimer = null;
-        this.connect = () => {
+        this.connect = () => __awaiter(this, void 0, void 0, function* () {
             this.close();
-            this._socket = this.createSocket();
+            this._socket = yield this.createSocket();
             if (this._socket) {
                 this.open();
             }
             this.error();
-        };
+        });
         this.heartbeat = () => {
             this.heartbeatTimer = setInterval(() => {
                 var _a;
@@ -563,17 +580,16 @@ class MSocket {
         this.onMessage = (event) => {
             console.log('onMessage', event);
         };
-        this.createSocket = () => {
+        this.createSocket = () => __awaiter(this, void 0, void 0, function* () {
             if (isWebSocketSupported) {
                 return new WebSocket(this.url);
             }
             else if (isNodeEnv()) {
-                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                const WebSocket = require('ws');
+                const WebSocket = (yield Promise.resolve().then(function () { return /*#__PURE__*/_interopNamespace(require('ws')); })).default;
                 return new WebSocket(this.url);
             }
             return null;
-        };
+        });
         const mergeOption = mergeDeep(defaultWsOptions, option);
         this.url = formatUrl(url, mergeOption === null || mergeOption === void 0 ? void 0 : mergeOption.query);
         this.reconnectMaxCount = ((_a = mergeOption.autoReconnect) === null || _a === void 0 ? void 0 : _a.reconnectMaxCount) || 3;
@@ -639,7 +655,6 @@ function createInstance(defaultConfig) {
     return instance;
 }
 const defaults = {
-    adapter: ['webSocket', 'nodeSocket'],
     httpUrl: 'https://api.moobius.net',
     wsUrl: 'wss://ws.moobius.net',
 };

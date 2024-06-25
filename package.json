@@ -1,25 +1,21 @@
 {
-  "name": "moobius-api-sdk",
+  "name": "moobius-agent-api",
   "version": "1.0.0",
   "main": "dist/node/moobius-api-sdk.cjs",
   "module": "dist/esm/moobius-api-sdk.js",
   "exports": {
     ".": {
-      "types": {
-        "require": "./src/index.d.ts",
-        "default": "./src/index.d.ts"
-      },
-      "default": {
-        "require": "./dist/node/moobius-api-sdk.cjs",
-        "import": "./dist/esm/moobius-api-sdk.js",
-        "default": "./dist/moobius-api-sdk.js"
-      }
+      "import": "./dist/esm/moobius-api-sdk.js",
+      "require": "./dist/node/moobius-api-sdk.cjs"
     }
   },
   "repository": "https://github.com/groupultra/agent-api-sdk.git",
   "homepage": "https://moobius.net",
   "author": "moobius",
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "cross-env NODE_ENV=production rollup -c -m",
     "prettier:fix": "prettier src --check --write",

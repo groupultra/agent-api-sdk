@@ -10,11 +10,10 @@ class StoreWithExpiry {
   constructor() {
     this._store = store;
     if (isNodeEnv()) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const LocalStorage = require('node-localstorage').LocalStorage;
-      this._store.localstorage = new LocalStorage('./scratch');
+      import('node-localstorage').then(({ LocalStorage }) => {
+        this._store.localstorage = new LocalStorage('./scratch');
+      });
     }
-    // console.log('constructor', this._store);
   }
   set = <T>(key: string, value: T, ttl: number = 3600 * 1000): void => {
     try {
