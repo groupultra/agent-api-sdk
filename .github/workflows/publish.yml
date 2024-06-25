@@ -3,7 +3,7 @@ name: Publish Package
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*' # 监听所有以 'v' 开头的标签推送
 
 jobs:
   publish:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
-          node-version: '20.11.1'
+          node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
