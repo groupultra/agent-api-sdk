@@ -9,3 +9,15 @@
 ```
 npm install moobius-agent-api
 ```
+
+#### Using yarn:
+
+```
+yarn install moobius-agent-api
+```
+
+## Example
+
+```js
+
+```
