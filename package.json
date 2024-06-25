@@ -1,7 +1,8 @@
 {
-  "name": "agent-api-sdk",
+  "name": "moobius-api-sdk",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/node/moobius-api-sdk.cjs",
+  "module": "dist/esm/moobius-api-sdk.js",
   "exports": {
     ".": {
       "types": {
@@ -10,6 +11,7 @@
       },
       "default": {
         "require": "./dist/node/moobius-api-sdk.cjs",
+        "import": "./dist/esm/moobius-api-sdk.js",
         "default": "./dist/moobius-api-sdk.js"
       }
     }
