@@ -4410,16 +4410,16 @@ function dispatchHttpRequest$1() {
                 }
                 const config = getConfig && getConfig(data);
                 const result = yield fetch(config);
-                console.log('methodName::::::', methodName, result.data);
                 if (methodName === LOGIN_METHODNAME) {
                     const { AccessToken, ExpiresIn, RefreshToken, TokenType } = result.data.AuthenticationResult;
-                    console.log('success login!!');
                     storeWithExpiry.set('userInfo', {
                         AccessToken,
                         ExpiresIn,
                         RefreshToken,
                         TokenType,
                     }, ExpiresIn * 1000);
+                    //@ts-ignore
+                    self.send && self.send('user_login');
                 }
                 return result;
             });
@@ -4528,6 +4528,8 @@ class MSocket {
         this._socket = null;
         this.reconnectMaxCount = 3;
         this.heartbeatTime = 6000;
+        this.requestCallBackTimeout = 10000;
+        this.requestCallbacks = {};
         this.heartbeatTimer = null;
         this.connect = () => __awaiter(this, void 0, void 0, function* () {
             this.close();
@@ -4536,6 +4538,9 @@ class MSocket {
                 this.open();
             }
             this.error();
+        });
+        this.reconnect = () => __awaiter(this, void 0, void 0, function* () {
+            yield this.connect();
         });
         this.heartbeat = () => {
             this.heartbeatTimer = setInterval(() => {
@@ -4574,6 +4579,49 @@ class MSocket {
             this.heartbeat();
         };
     }
+    send(data) {
+        return new Promise((resolve, reject) => {
+            if (!this._socket) {
+                reject(new Error('socket is null'));
+                return;
+            }
+            const requestId = data.request_id || v4();
+            let timeoutHandle = null;
+            const trySend = () => {
+                if (!this._socket) {
+                    reject(new Error('socket is null'));
+                    return;
+                }
+                if (this._socket.readyState === this._socket.OPEN) {
+                    try {
+                        this.requestCallbacks[requestId] = (response) => {
+                            clearTimeout(timeoutHandle);
+                            resolve(response);
+                        };
+                        this._socket.send(JSON.stringify(data));
+                        timeoutHandle = setTimeout(() => {
+                            delete this.requestCallbacks[requestId];
+                            reject(new Error('request timeout'));
+                        }, this.requestCallBackTimeout);
+                    }
+                    catch (error) {
+                        reject(error); // 发送过程中出现错误
+                    }
+                }
+                else if ([this._socket.CLOSING, this._socket.CLOSED].includes(this._socket.readyState)) {
+                    this.reconnect()
+                        .then(() => {
+                        setTimeout(trySend, 1000);
+                    })
+                        .catch(reject);
+                }
+                else if (this._socket.readyState === this._socket.CONNECTING) {
+                    setTimeout(trySend, 1000);
+                }
+            };
+            trySend();
+        });
+    }
     error() {
         this._socket.onerror = (event) => {
             console.log('onerror', event);
@@ -4600,9 +4648,11 @@ function dispatchHttpRequest() {
         if (!typeName.includes(type)) {
             throw new Error(`${type}: type is not exist`);
         }
-        socketConfig[type];
+        const config = socketConfig[type];
+        // console.log('send', config());
+        self.socket.send(config());
     });
-    console.log(socketConfig);
+    // console.log(socketConfig);
 }
 
 class MoobiusSDK {

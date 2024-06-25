@@ -39,11 +39,9 @@ export default function dispatchHttpRequest(this: MoobiusSDK) {
         }
         const config = getConfig && (getConfig as any)(data);
         const result = await fetch(config);
-        console.log('methodName::::::', methodName, result.data);
         if (methodName === LOGIN_METHODNAME) {
           const { AccessToken, ExpiresIn, RefreshToken, TokenType } =
             result.data.AuthenticationResult;
-          console.log('success login!!');
           storage.set<USER_INFO>(
             'userInfo',
             {
@@ -54,6 +52,8 @@ export default function dispatchHttpRequest(this: MoobiusSDK) {
             },
             ExpiresIn * 1000,
           );
+          //@ts-ignore
+          self.send && self.send('user_login');
         }
         return result;
       };

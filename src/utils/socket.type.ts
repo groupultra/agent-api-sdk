@@ -11,6 +11,15 @@ type AutoReconnect = {
   reconnectMaxCount?: number;
 };
 type MessageEvent = Record<string, (data: any) => void>;
+
+export type WsConfigBase<T = Record<string, any>> = {
+  type: string;
+  request_id: string;
+  user_id: string;
+  access_token?: string;
+  auth_origin?: 'cognito' | 'oauth';
+  body?: T;
+};
 export interface IWSOptions {
   /**
    * 是否自动重连 默认`true`

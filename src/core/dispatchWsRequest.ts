@@ -18,6 +18,8 @@ export default function dispatchHttpRequest(this: MoobiusSDK) {
       throw new Error(`${type}: type is not exist`);
     }
     const config = socketConfig[type];
+    // console.log('send', config());
+    self.socket.send(config() as any);
   };
-  console.log(socketConfig);
+  // console.log(socketConfig);
 }

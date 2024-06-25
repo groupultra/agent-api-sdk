@@ -1,6 +1,6 @@
 import { formatUrl, isNodeEnv, mergeDeep } from '@/utils/index';
-
 import { v4 } from 'uuid';
+import type { WsConfigBase } from './socket.type';
 
 import type { IWSOptions } from './socket.type';
 import { defaultWsOptions } from './socket.type';
@@ -12,6 +12,8 @@ export class MSocket {
   public _socket: WebSocket | null = null;
   public reconnectMaxCount: number = 3;
   public heartbeatTime: number = 6000;
+  private requestCallBackTimeout: number = 10000;
+  private requestCallbacks: Record<string, (response: any) => void> = {};
   public heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   constructor(url: string, option: IWSOptions) {
     const mergeOption: IWSOptions = mergeDeep(defaultWsOptions, option);
@@ -33,6 +35,56 @@ export class MSocket {
       console.log('onopen');
       this.heartbeat();
     };
+  }
+  reconnect = async () => {
+    await this.connect();
+  };
+
+  send(data: WsConfigBase): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this._socket) {
+        reject(new Error('socket is null'));
+        return;
+      }
+      const requestId = data.request_id || v4();
+      let timeoutHandle: ReturnType<typeof setTimeout> | null | NodeJS.Timeout =
+        null;
+      const trySend = () => {
+        if (!this._socket) {
+          reject(new Error('socket is null'));
+          return;
+        }
+        if (this._socket!.readyState === this._socket!.OPEN) {
+          try {
+            this.requestCallbacks[requestId] = (response) => {
+              clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
+              resolve(response);
+            };
+            this._socket!.send(JSON.stringify(data));
+            timeoutHandle = setTimeout(() => {
+              delete this.requestCallbacks[requestId];
+              reject(new Error('request timeout'));
+            }, this.requestCallBackTimeout);
+          } catch (error) {
+            reject(error); // 发送过程中出现错误
+          }
+        } else if (
+          [this._socket!.CLOSING, this._socket!.CLOSED].includes(
+            this._socket!.readyState,
+          )
+        ) {
+          this.reconnect()
+            .then(() => {
+              setTimeout(trySend, 1000);
+            })
+            .catch(reject);
+        } else if (this._socket!.readyState === this._socket!.CONNECTING) {
+          setTimeout(trySend, 1000);
+        }
+      };
+
+      trySend();
+    });
   }
   heartbeat = () => {
     this.heartbeatTimer = setInterval(() => {
