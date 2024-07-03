@@ -11,8 +11,8 @@ import { terser } from 'rollup-plugin-terser';
 import { fileURLToPath } from 'url';
 
 const lib = require('./package.json');
-const outputFileName = 'moobius-api-sdk';
-const name = 'moobiusSdk';
+const outputFileName = 'moobius';
+const name = 'moobius';
 const namedInput = './src/index.ts';
 const defaultInput = './src/index.ts';
 

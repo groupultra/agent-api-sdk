@@ -1,5 +1,5 @@
 {
-  "name": "moobius-agent-api",
+  "name": "moobius",
   "version": "1.0.0",
   "main": "dist/node/moobius-api-sdk.cjs",
   "module": "dist/esm/moobius-api-sdk.js",

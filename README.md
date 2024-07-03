@@ -7,13 +7,13 @@
 #### Using npm:
 
 ```
-npm install moobius-api-sdk
+npm install moobius
 ```
 
 #### Using yarn:
 
 ```
-npm install moobius-api-sdk
+yarn add moobius
 ```
 
 ## Example

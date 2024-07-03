@@ -1,5 +1,4 @@
 import { v4 } from 'uuid';
-
 interface MessageBody {
   channel_id: string;
   subtype: string;
@@ -81,18 +80,6 @@ type ActionUpSubtype =
   | 'fetch_canvas'
   | 'fetch_style'
   | 'fetch_context_menu';
-
-export const UserLogin = (
-  access_token: string,
-  loginType: string = 'cognito',
-) => {
-  return {
-    type: 'user_login',
-    request_id: v4(),
-    access_token,
-    auth_origin: loginType,
-  };
-};
 
 export const MsgUp = ({
   type,
