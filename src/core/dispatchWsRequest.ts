@@ -17,9 +17,13 @@ export default function dispatchHttpRequest(this: MoobiusSDK) {
     if (!typeName.includes(type)) {
       throw new Error(`${type}: type is not exist`);
     }
-    const config = socketConfig[type];
-    // console.log('send', config());
-    self.socket.send(config() as any);
+    if (type === 'user_login') {
+      const config = socketConfig[type];
+      // console.log('send', config());
+      self.socket.send(config() as any);
+    } else {
+      console.log('type:::', type);
+    }
   };
   // console.log(socketConfig);
 }
