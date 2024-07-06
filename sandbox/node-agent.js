@@ -1,6 +1,6 @@
-import moobiusSdk from '../dist/node/moobius-api-sdk.cjs';
+import moobius from '../dist/node/moobius.cjs';
 
-const _mSdk = moobiusSdk({
+const _mSdk = moobius({
   url: 'https://api.moobius.net/',
 });
 
