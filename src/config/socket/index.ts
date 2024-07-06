@@ -98,7 +98,7 @@ export const user_login = (
     auth_origin: loginType,
   };
 };
-export const MsgUp = ({
+export const message_up = ({
   type,
   value,
   recipients = '',
@@ -139,7 +139,7 @@ export const MsgUp = ({
   };
 };
 
-export const FeatureCall = ({
+export const button_click = ({
   featureId,
   arguments: arg,
 }: {
@@ -159,7 +159,8 @@ export const FeatureCall = ({
     },
   };
 };
-export const MenuClick = ({
+
+export const menu_click = ({
   item_id,
   message_id,
   message_subtype,
@@ -190,7 +191,7 @@ export const MenuClick = ({
     },
   };
 };
-export const Action = ({
+export const action = ({
   type,
   channelId,
 }: {

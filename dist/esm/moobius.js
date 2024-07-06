@@ -4502,7 +4502,7 @@ const user_login = (access_token = '', loginType = 'cognito') => {
         auth_origin: loginType,
     };
 };
-const MsgUp = ({ type, value, recipients = '', }) => {
+const message_up = ({ type, value, recipients = '', }) => {
     //   const store = getStore();
     return {
         type: 'message_up',
@@ -4521,7 +4521,7 @@ const MsgUp = ({ type, value, recipients = '', }) => {
         },
     };
 };
-const FeatureCall = ({ featureId, arguments: arg, }) => {
+const button_click = ({ featureId, arguments: arg, }) => {
     //   const store = getStore();
     return {
         type: 'button_click',
@@ -4535,7 +4535,7 @@ const FeatureCall = ({ featureId, arguments: arg, }) => {
         },
     };
 };
-const MenuClick = ({ item_id, message_id, message_subtype, message_content, arguments: arg, }) => {
+const menu_click = ({ item_id, message_id, message_subtype, message_content, arguments: arg, }) => {
     //   const store = getStore();
     return {
         type: 'menu_click',
@@ -4552,7 +4552,7 @@ const MenuClick = ({ item_id, message_id, message_subtype, message_content, argu
         },
     };
 };
-const Action = ({ type, channelId, }) => {
+const action = ({ type, channelId, }) => {
     //   const store = getStore();
     return {
         type: 'action',
@@ -4569,10 +4569,10 @@ const Action = ({ type, channelId, }) => {
 const socketConfig = /*#__PURE__*/Object.freeze({
     __proto__: null,
     user_login: user_login,
-    MsgUp: MsgUp,
-    FeatureCall: FeatureCall,
-    MenuClick: MenuClick,
-    Action: Action
+    message_up: message_up,
+    button_click: button_click,
+    menu_click: menu_click,
+    action: action
 });
 
 const defaultWsOptions = {
@@ -4715,14 +4715,9 @@ function dispatchHttpRequest() {
         if (!typeName.includes(type)) {
             throw new Error(`${type}: type is not exist`);
         }
-        if (type === 'user_login') {
-            const config = socketConfig[type];
-            // console.log('send', config());
-            self.socket.send(config());
-        }
-        else {
-            console.log('type:::', type);
-        }
+        // if (type === 'user_login') {
+        const config = socketConfig[type];
+        self.socket.send(config(data));
     });
     // console.log(socketConfig);
 }
