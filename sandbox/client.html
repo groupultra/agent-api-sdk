@@ -16,13 +16,21 @@
 
       async function init() {
         console.log('init', _mSdk);
-        await _mSdk.auth.signIn({
-          username: 'yihang19950903@gmail.com',
-          password: '12345678',
-        });
-        console.log('sign in success');
-        const info = await _mSdk.user.getCurrentInfo();
-        console.log(info);
+        try {
+          await _mSdk.auth.signIn({
+            username: 'yihang19950903@gmail.com',
+            password: '12345678',
+          });
+          console.log('sign in success');
+          // const info = await _mSdk.user.getCurrentInfo();
+          // console.log(info);
+          _mSdk.send('message_up', {
+            type: 'text',
+            content: 'hello world',
+          });
+        } catch (e) {
+          console.log(e);
+        }
       }
       init();
     </script>

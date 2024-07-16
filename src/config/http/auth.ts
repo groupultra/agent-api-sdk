@@ -1,4 +1,7 @@
+import storage from '@/utils/storage';
 import { BASE_HTTP_RESPONSE } from './baseHttpResponse';
+import type { CURRENTUSERINFO } from './channel';
+import { getCurrentInfo } from './user';
 export type SIGN_PARAMS = {
   password?: string;
   username?: string;
@@ -10,6 +13,16 @@ export type USER_INFO = {
   ExpiresIn: number;
   RefreshToken: string;
   TokenType: 'Bearer';
+  userInfo: {
+    user_id: string;
+    system_context: {
+      onboarding: {
+        progress: 'un_start';
+      };
+    };
+    email: string;
+    context: CURRENTUSERINFO['context'];
+  };
 };
 
 export const signUp = (
@@ -31,6 +44,24 @@ export const signIn = (
   data: params,
   config: {
     ignoreAuth: true,
+  },
+  callback: async function (result) {
+    const { AccessToken, ExpiresIn, RefreshToken, TokenType } =
+      result.data.AuthenticationResult;
+    console.log('result', result);
+    const userInfo = await (this as any).fetch(getCurrentInfo());
+    storage.set<USER_INFO>(
+      'userInfo',
+      {
+        AccessToken,
+        ExpiresIn,
+        RefreshToken,
+        TokenType,
+        userInfo: userInfo?.data || null,
+      },
+      ExpiresIn * 1000,
+    );
+    await (this as any)?.send('user_login');
   },
 });
 

@@ -12,7 +12,7 @@ export const UNCONFIRMED_MSG = 'UNCONFIRMED';
 
 const createAxios = ({
   baseURL,
-  timeout = 3000,
+  timeout = 100000,
 }: {
   baseURL: string;
   timeout?: number;

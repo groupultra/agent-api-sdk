@@ -122,6 +122,451 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
+var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+function createCommonjsModule(fn, basedir, module) {
+	return module = {
+		path: basedir,
+		exports: {},
+		require: function (path, base) {
+			return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
+		}
+	}, fn(module, module.exports), module.exports;
+}
+
+function commonjsRequire () {
+	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
+}
+
+var store2 = createCommonjsModule(function (module) {
+(function(window, define) {
+    var _ = {
+        version: "2.14.3",
+        areas: {},
+        apis: {},
+        nsdelim: '.',
+
+        // utilities
+        inherit: function(api, o) {
+            for (var p in api) {
+                if (!o.hasOwnProperty(p)) {
+                    Object.defineProperty(o, p, Object.getOwnPropertyDescriptor(api, p));
+                }
+            }
+            return o;
+        },
+        stringify: function(d, fn) {
+            return d === undefined || typeof d === "function" ? d+'' : JSON.stringify(d,fn||_.replace);
+        },
+        parse: function(s, fn) {
+            // if it doesn't parse, return as is
+            try{ return JSON.parse(s,fn||_.revive); }catch(e){ return s; }
+        },
+
+        // extension hooks
+        fn: function(name, fn) {
+            _.storeAPI[name] = fn;
+            for (var api in _.apis) {
+                _.apis[api][name] = fn;
+            }
+        },
+        get: function(area, key){ return area.getItem(key); },
+        set: function(area, key, string){ area.setItem(key, string); },
+        remove: function(area, key){ area.removeItem(key); },
+        key: function(area, i){ return area.key(i); },
+        length: function(area){ return area.length; },
+        clear: function(area){ area.clear(); },
+
+        // core functions
+        Store: function(id, area, namespace) {
+            var store = _.inherit(_.storeAPI, function(key, data, overwrite) {
+                if (arguments.length === 0){ return store.getAll(); }
+                if (typeof data === "function"){ return store.transact(key, data, overwrite); }// fn=data, alt=overwrite
+                if (data !== undefined){ return store.set(key, data, overwrite); }
+                if (typeof key === "string" || typeof key === "number"){ return store.get(key); }
+                if (typeof key === "function"){ return store.each(key); }
+                if (!key){ return store.clear(); }
+                return store.setAll(key, data);// overwrite=data, data=key
+            });
+            store._id = id;
+            try {
+                var testKey = '__store2_test';
+                area.setItem(testKey, 'ok');
+                store._area = area;
+                area.removeItem(testKey);
+            } catch (e) {
+                store._area = _.storage('fake');
+            }
+            store._ns = namespace || '';
+            if (!_.areas[id]) {
+                _.areas[id] = store._area;
+            }
+            if (!_.apis[store._ns+store._id]) {
+                _.apis[store._ns+store._id] = store;
+            }
+            return store;
+        },
+        storeAPI: {
+            // admin functions
+            area: function(id, area) {
+                var store = this[id];
+                if (!store || !store.area) {
+                    store = _.Store(id, area, this._ns);//new area-specific api in this namespace
+                    if (!this[id]){ this[id] = store; }
+                }
+                return store;
+            },
+            namespace: function(namespace, singleArea, delim) {
+                delim = delim || this._delim || _.nsdelim;
+                if (!namespace){
+                    return this._ns ? this._ns.substring(0,this._ns.length-delim.length) : '';
+                }
+                var ns = namespace, store = this[ns];
+                if (!store || !store.namespace) {
+                    store = _.Store(this._id, this._area, this._ns+ns+delim);//new namespaced api
+                    store._delim = delim;
+                    if (!this[ns]){ this[ns] = store; }
+                    if (!singleArea) {
+                        for (var name in _.areas) {
+                            store.area(name, _.areas[name]);
+                        }
+                    }
+                }
+                return store;
+            },
+            isFake: function(force) {
+                if (force) {
+                    this._real = this._area;
+                    this._area = _.storage('fake');
+                } else if (force === false) {
+                    this._area = this._real || this._area;
+                }
+                return this._area.name === 'fake';
+            },
+            toString: function() {
+                return 'store'+(this._ns?'.'+this.namespace():'')+'['+this._id+']';
+            },
+
+            // storage functions
+            has: function(key) {
+                if (this._area.has) {
+                    return this._area.has(this._in(key));//extension hook
+                }
+                return !!(this._in(key) in this._area);
+            },
+            size: function(){ return this.keys().length; },
+            each: function(fn, fill) {// fill is used by keys(fillList) and getAll(fillList))
+                for (var i=0, m=_.length(this._area); i<m; i++) {
+                    var key = this._out(_.key(this._area, i));
+                    if (key !== undefined) {
+                        if (fn.call(this, key, this.get(key), fill) === false) {
+                            break;
+                        }
+                    }
+                    if (m > _.length(this._area)) { m--; i--; }// in case of removeItem
+                }
+                return fill || this;
+            },
+            keys: function(fillList) {
+                return this.each(function(k, v, list){ list.push(k); }, fillList || []);
+            },
+            get: function(key, alt) {
+                var s = _.get(this._area, this._in(key)),
+                    fn;
+                if (typeof alt === "function") {
+                    fn = alt;
+                    alt = null;
+                }
+                return s !== null ? _.parse(s, fn) :
+                    alt != null ? alt : s;
+            },
+            getAll: function(fillObj) {
+                return this.each(function(k, v, all){ all[k] = v; }, fillObj || {});
+            },
+            transact: function(key, fn, alt) {
+                var val = this.get(key, alt),
+                    ret = fn(val);
+                this.set(key, ret === undefined ? val : ret);
+                return this;
+            },
+            set: function(key, data, overwrite) {
+                var d = this.get(key),
+                    replacer;
+                if (d != null && overwrite === false) {
+                    return data;
+                }
+                if (typeof overwrite === "function") {
+                    replacer = overwrite;
+                    overwrite = undefined;
+                }
+                return _.set(this._area, this._in(key), _.stringify(data, replacer), overwrite) || d;
+            },
+            setAll: function(data, overwrite) {
+                var changed, val;
+                for (var key in data) {
+                    val = data[key];
+                    if (this.set(key, val, overwrite) !== val) {
+                        changed = true;
+                    }
+                }
+                return changed;
+            },
+            add: function(key, data, replacer) {
+                var d = this.get(key);
+                if (d instanceof Array) {
+                    data = d.concat(data);
+                } else if (d !== null) {
+                    var type = typeof d;
+                    if (type === typeof data && type === 'object') {
+                        for (var k in data) {
+                            d[k] = data[k];
+                        }
+                        data = d;
+                    } else {
+                        data = d + data;
+                    }
+                }
+                _.set(this._area, this._in(key), _.stringify(data, replacer));
+                return data;
+            },
+            remove: function(key, alt) {
+                var d = this.get(key, alt);
+                _.remove(this._area, this._in(key));
+                return d;
+            },
+            clear: function() {
+                if (!this._ns) {
+                    _.clear(this._area);
+                } else {
+                    this.each(function(k){ _.remove(this._area, this._in(k)); }, 1);
+                }
+                return this;
+            },
+            clearAll: function() {
+                var area = this._area;
+                for (var id in _.areas) {
+                    if (_.areas.hasOwnProperty(id)) {
+                        this._area = _.areas[id];
+                        this.clear();
+                    }
+                }
+                this._area = area;
+                return this;
+            },
+
+            // internal use functions
+            _in: function(k) {
+                if (typeof k !== "string"){ k = _.stringify(k); }
+                return this._ns ? this._ns + k : k;
+            },
+            _out: function(k) {
+                return this._ns ?
+                    k && k.indexOf(this._ns) === 0 ?
+                        k.substring(this._ns.length) :
+                        undefined : // so each() knows to skip it
+                    k;
+            }
+        },// end _.storeAPI
+        storage: function(name) {
+            return _.inherit(_.storageAPI, { items: {}, name: name });
+        },
+        storageAPI: {
+            length: 0,
+            has: function(k){ return this.items.hasOwnProperty(k); },
+            key: function(i) {
+                var c = 0;
+                for (var k in this.items){
+                    if (this.has(k) && i === c++) {
+                        return k;
+                    }
+                }
+            },
+            setItem: function(k, v) {
+                if (!this.has(k)) {
+                    this.length++;
+                }
+                this.items[k] = v;
+            },
+            removeItem: function(k) {
+                if (this.has(k)) {
+                    delete this.items[k];
+                    this.length--;
+                }
+            },
+            getItem: function(k){ return this.has(k) ? this.items[k] : null; },
+            clear: function(){ for (var k in this.items){ this.removeItem(k); } }
+        }// end _.storageAPI
+    };
+
+    var store =
+        // safely set this up (throws error in IE10/32bit mode for local files)
+        _.Store("local", (function(){try{ return localStorage; }catch(e){}})());
+    store.local = store;// for completeness
+    store._ = _;// for extenders and debuggers...
+    // safely setup store.session (throws exception in FF for file:/// urls)
+    store.area("session", (function(){try{ return sessionStorage; }catch(e){}})());
+    store.area("page", _.storage("page"));
+
+    if (typeof define === 'function' && define.amd !== undefined) {
+        define('store2', [], function () {
+            return store;
+        });
+    } else if (module.exports) {
+        module.exports = store;
+    } else {
+        // expose the primary store fn to the global object and save conflicts
+        if (window.store){ _.conflict = window.store; }
+        window.store = store;
+    }
+
+})(commonjsGlobal, commonjsGlobal && commonjsGlobal.define);
+});
+
+class StoreWithExpiry {
+    constructor() {
+        this.set = (key, value, ttl = 3600 * 1000) => {
+            try {
+                const now = new Date();
+                const item = {
+                    value: value,
+                    expiry: now.getTime() + ttl,
+                };
+                this._store.set(key, item);
+                console.log('set_success', this._store.get(key));
+            }
+            catch (error) {
+                console.error('set_error', error);
+            }
+        };
+        this.get = (key) => {
+            const item = this._store.get(key);
+            if (!item) {
+                return null;
+            }
+            const now = new Date();
+            if (now.getTime() > item.expiry) {
+                this._store.remove(key);
+                return null;
+            }
+            return item.value;
+        };
+        this.remove = (key) => {
+            this._store.remove(key);
+        };
+        this.clearAll = () => {
+            this._store.clearAll();
+        };
+        this._store = store2;
+        if (isNodeEnv()) {
+            import('node-localstorage').then(({ LocalStorage }) => {
+                this._store.localstorage = new LocalStorage('./scratch');
+            });
+        }
+    }
+}
+const storeWithExpiry = new StoreWithExpiry();
+
+const getCurrentInfo = () => ({
+    url: '/user/info',
+    method: 'GET',
+});
+const updateCurrentInfo = (params) => ({
+    url: '/user/info',
+    method: 'POST',
+    data: params,
+});
+/** **********
+ * [whistle/ group]
+ */
+const groupList = (channel_id) => ({
+    url: '/user/group/list',
+    method: 'GET',
+    data: {
+        channel_id,
+    },
+});
+const groupUpdate = (data) => ({
+    url: '/user/group/update',
+    method: 'POST',
+    data,
+});
+const groupCreate = (data) => ({
+    url: '/user/group/create',
+    method: 'POST',
+    data,
+});
+const groupDel = (channel_id, group_id) => ({
+    url: '/user/group/delete',
+    method: 'POST',
+    data: {
+        channel_id,
+        group_id,
+    },
+});
+/** **********
+ * [temp]
+ */
+const getGroupTemp = (channel_id) => ({
+    url: '/user/group/temp',
+    method: 'GET',
+    data: {
+        channel_id,
+    },
+});
+const updateGrouptemp = (data) => ({
+    url: '/user/group/temp',
+    method: 'POST',
+    data,
+});
+/** **********
+ * [TargetGroup description]
+ */
+const group = (data) => ({
+    url: '/user/group',
+    method: 'GET',
+    data,
+});
+const ServiceGroup = (group_id) => ({
+    url: '/service/group',
+    method: 'GET',
+    data: {
+        group_id,
+    },
+});
+/** **********
+ * [Character]
+ */
+const characterFetchProfile = (character_list) => ({
+    url: '/character/fetch_profile',
+    method: 'GET',
+    data: {
+        character_list,
+    },
+});
+const getUserProfile = (character_list) => ({
+    url: '/character/fetch_profile',
+    method: 'POST',
+    data: {
+        character_list,
+    },
+});
+
+const user = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    getCurrentInfo: getCurrentInfo,
+    updateCurrentInfo: updateCurrentInfo,
+    groupList: groupList,
+    groupUpdate: groupUpdate,
+    groupCreate: groupCreate,
+    groupDel: groupDel,
+    getGroupTemp: getGroupTemp,
+    updateGrouptemp: updateGrouptemp,
+    group: group,
+    ServiceGroup: ServiceGroup,
+    characterFetchProfile: characterFetchProfile,
+    getUserProfile: getUserProfile
+});
+
 const signUp = (params) => ({
     url: '/auth/sign_up',
     method: 'POST',
@@ -136,6 +581,21 @@ const signIn = (params) => ({
     data: params,
     config: {
         ignoreAuth: true,
+    },
+    callback: function (result) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { AccessToken, ExpiresIn, RefreshToken, TokenType } = result.data.AuthenticationResult;
+            console.log('result', result);
+            const userInfo = yield this.fetch(getCurrentInfo());
+            storeWithExpiry.set('userInfo', {
+                AccessToken,
+                ExpiresIn,
+                RefreshToken,
+                TokenType,
+                userInfo: (userInfo === null || userInfo === void 0 ? void 0 : userInfo.data) || null,
+            }, ExpiresIn * 1000);
+            yield (this === null || this === void 0 ? void 0 : this.send('user_login'));
+        });
     },
 });
 const signOut = (params) => ({
@@ -262,107 +722,6 @@ const fetchFileDownload = (pathname) => __awaiter(void 0, void 0, void 0, functi
 const file = /*#__PURE__*/Object.freeze({
     __proto__: null,
     fetchFileDownload: fetchFileDownload
-});
-
-const getCurrentInfo = () => ({
-    url: '/user/info',
-    method: 'GET',
-});
-const updateCurrentInfo = (params) => ({
-    url: '/user/info',
-    method: 'POST',
-    data: params,
-});
-/** **********
- * [whistle/ group]
- */
-const groupList = (channel_id) => ({
-    url: '/user/group/list',
-    method: 'GET',
-    data: {
-        channel_id,
-    },
-});
-const groupUpdate = (data) => ({
-    url: '/user/group/update',
-    method: 'POST',
-    data,
-});
-const groupCreate = (data) => ({
-    url: '/user/group/create',
-    method: 'POST',
-    data,
-});
-const groupDel = (channel_id, group_id) => ({
-    url: '/user/group/delete',
-    method: 'POST',
-    data: {
-        channel_id,
-        group_id,
-    },
-});
-/** **********
- * [temp]
- */
-const getGroupTemp = (channel_id) => ({
-    url: '/user/group/temp',
-    method: 'GET',
-    data: {
-        channel_id,
-    },
-});
-const updateGrouptemp = (data) => ({
-    url: '/user/group/temp',
-    method: 'POST',
-    data,
-});
-/** **********
- * [TargetGroup description]
- */
-const group = (data) => ({
-    url: '/user/group',
-    method: 'GET',
-    data,
-});
-const ServiceGroup = (group_id) => ({
-    url: '/service/group',
-    method: 'GET',
-    data: {
-        group_id,
-    },
-});
-/** **********
- * [Character]
- */
-const characterFetchProfile = (character_list) => ({
-    url: '/character/fetch_profile',
-    method: 'GET',
-    data: {
-        character_list,
-    },
-});
-const getUserProfile = (character_list) => ({
-    url: '/character/fetch_profile',
-    method: 'POST',
-    data: {
-        character_list,
-    },
-});
-
-const user = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    getCurrentInfo: getCurrentInfo,
-    updateCurrentInfo: updateCurrentInfo,
-    groupList: groupList,
-    groupUpdate: groupUpdate,
-    groupCreate: groupCreate,
-    groupDel: groupDel,
-    getGroupTemp: getGroupTemp,
-    updateGrouptemp: updateGrouptemp,
-    group: group,
-    ServiceGroup: ServiceGroup,
-    characterFetchProfile: characterFetchProfile,
-    getUserProfile: getUserProfile
 });
 
 const httpConfig = {
@@ -4008,354 +4367,10 @@ axios.default = axios;
 // this module should only have a default export
 const axios$1 = axios;
 
-var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-function createCommonjsModule(fn, basedir, module) {
-	return module = {
-		path: basedir,
-		exports: {},
-		require: function (path, base) {
-			return commonjsRequire(path, (base === undefined || base === null) ? module.path : base);
-		}
-	}, fn(module, module.exports), module.exports;
-}
-
-function commonjsRequire () {
-	throw new Error('Dynamic requires are not currently supported by @rollup/plugin-commonjs');
-}
-
-var store2 = createCommonjsModule(function (module) {
-(function(window, define) {
-    var _ = {
-        version: "2.14.3",
-        areas: {},
-        apis: {},
-        nsdelim: '.',
-
-        // utilities
-        inherit: function(api, o) {
-            for (var p in api) {
-                if (!o.hasOwnProperty(p)) {
-                    Object.defineProperty(o, p, Object.getOwnPropertyDescriptor(api, p));
-                }
-            }
-            return o;
-        },
-        stringify: function(d, fn) {
-            return d === undefined || typeof d === "function" ? d+'' : JSON.stringify(d,fn||_.replace);
-        },
-        parse: function(s, fn) {
-            // if it doesn't parse, return as is
-            try{ return JSON.parse(s,fn||_.revive); }catch(e){ return s; }
-        },
-
-        // extension hooks
-        fn: function(name, fn) {
-            _.storeAPI[name] = fn;
-            for (var api in _.apis) {
-                _.apis[api][name] = fn;
-            }
-        },
-        get: function(area, key){ return area.getItem(key); },
-        set: function(area, key, string){ area.setItem(key, string); },
-        remove: function(area, key){ area.removeItem(key); },
-        key: function(area, i){ return area.key(i); },
-        length: function(area){ return area.length; },
-        clear: function(area){ area.clear(); },
-
-        // core functions
-        Store: function(id, area, namespace) {
-            var store = _.inherit(_.storeAPI, function(key, data, overwrite) {
-                if (arguments.length === 0){ return store.getAll(); }
-                if (typeof data === "function"){ return store.transact(key, data, overwrite); }// fn=data, alt=overwrite
-                if (data !== undefined){ return store.set(key, data, overwrite); }
-                if (typeof key === "string" || typeof key === "number"){ return store.get(key); }
-                if (typeof key === "function"){ return store.each(key); }
-                if (!key){ return store.clear(); }
-                return store.setAll(key, data);// overwrite=data, data=key
-            });
-            store._id = id;
-            try {
-                var testKey = '__store2_test';
-                area.setItem(testKey, 'ok');
-                store._area = area;
-                area.removeItem(testKey);
-            } catch (e) {
-                store._area = _.storage('fake');
-            }
-            store._ns = namespace || '';
-            if (!_.areas[id]) {
-                _.areas[id] = store._area;
-            }
-            if (!_.apis[store._ns+store._id]) {
-                _.apis[store._ns+store._id] = store;
-            }
-            return store;
-        },
-        storeAPI: {
-            // admin functions
-            area: function(id, area) {
-                var store = this[id];
-                if (!store || !store.area) {
-                    store = _.Store(id, area, this._ns);//new area-specific api in this namespace
-                    if (!this[id]){ this[id] = store; }
-                }
-                return store;
-            },
-            namespace: function(namespace, singleArea, delim) {
-                delim = delim || this._delim || _.nsdelim;
-                if (!namespace){
-                    return this._ns ? this._ns.substring(0,this._ns.length-delim.length) : '';
-                }
-                var ns = namespace, store = this[ns];
-                if (!store || !store.namespace) {
-                    store = _.Store(this._id, this._area, this._ns+ns+delim);//new namespaced api
-                    store._delim = delim;
-                    if (!this[ns]){ this[ns] = store; }
-                    if (!singleArea) {
-                        for (var name in _.areas) {
-                            store.area(name, _.areas[name]);
-                        }
-                    }
-                }
-                return store;
-            },
-            isFake: function(force) {
-                if (force) {
-                    this._real = this._area;
-                    this._area = _.storage('fake');
-                } else if (force === false) {
-                    this._area = this._real || this._area;
-                }
-                return this._area.name === 'fake';
-            },
-            toString: function() {
-                return 'store'+(this._ns?'.'+this.namespace():'')+'['+this._id+']';
-            },
-
-            // storage functions
-            has: function(key) {
-                if (this._area.has) {
-                    return this._area.has(this._in(key));//extension hook
-                }
-                return !!(this._in(key) in this._area);
-            },
-            size: function(){ return this.keys().length; },
-            each: function(fn, fill) {// fill is used by keys(fillList) and getAll(fillList))
-                for (var i=0, m=_.length(this._area); i<m; i++) {
-                    var key = this._out(_.key(this._area, i));
-                    if (key !== undefined) {
-                        if (fn.call(this, key, this.get(key), fill) === false) {
-                            break;
-                        }
-                    }
-                    if (m > _.length(this._area)) { m--; i--; }// in case of removeItem
-                }
-                return fill || this;
-            },
-            keys: function(fillList) {
-                return this.each(function(k, v, list){ list.push(k); }, fillList || []);
-            },
-            get: function(key, alt) {
-                var s = _.get(this._area, this._in(key)),
-                    fn;
-                if (typeof alt === "function") {
-                    fn = alt;
-                    alt = null;
-                }
-                return s !== null ? _.parse(s, fn) :
-                    alt != null ? alt : s;
-            },
-            getAll: function(fillObj) {
-                return this.each(function(k, v, all){ all[k] = v; }, fillObj || {});
-            },
-            transact: function(key, fn, alt) {
-                var val = this.get(key, alt),
-                    ret = fn(val);
-                this.set(key, ret === undefined ? val : ret);
-                return this;
-            },
-            set: function(key, data, overwrite) {
-                var d = this.get(key),
-                    replacer;
-                if (d != null && overwrite === false) {
-                    return data;
-                }
-                if (typeof overwrite === "function") {
-                    replacer = overwrite;
-                    overwrite = undefined;
-                }
-                return _.set(this._area, this._in(key), _.stringify(data, replacer), overwrite) || d;
-            },
-            setAll: function(data, overwrite) {
-                var changed, val;
-                for (var key in data) {
-                    val = data[key];
-                    if (this.set(key, val, overwrite) !== val) {
-                        changed = true;
-                    }
-                }
-                return changed;
-            },
-            add: function(key, data, replacer) {
-                var d = this.get(key);
-                if (d instanceof Array) {
-                    data = d.concat(data);
-                } else if (d !== null) {
-                    var type = typeof d;
-                    if (type === typeof data && type === 'object') {
-                        for (var k in data) {
-                            d[k] = data[k];
-                        }
-                        data = d;
-                    } else {
-                        data = d + data;
-                    }
-                }
-                _.set(this._area, this._in(key), _.stringify(data, replacer));
-                return data;
-            },
-            remove: function(key, alt) {
-                var d = this.get(key, alt);
-                _.remove(this._area, this._in(key));
-                return d;
-            },
-            clear: function() {
-                if (!this._ns) {
-                    _.clear(this._area);
-                } else {
-                    this.each(function(k){ _.remove(this._area, this._in(k)); }, 1);
-                }
-                return this;
-            },
-            clearAll: function() {
-                var area = this._area;
-                for (var id in _.areas) {
-                    if (_.areas.hasOwnProperty(id)) {
-                        this._area = _.areas[id];
-                        this.clear();
-                    }
-                }
-                this._area = area;
-                return this;
-            },
-
-            // internal use functions
-            _in: function(k) {
-                if (typeof k !== "string"){ k = _.stringify(k); }
-                return this._ns ? this._ns + k : k;
-            },
-            _out: function(k) {
-                return this._ns ?
-                    k && k.indexOf(this._ns) === 0 ?
-                        k.substring(this._ns.length) :
-                        undefined : // so each() knows to skip it
-                    k;
-            }
-        },// end _.storeAPI
-        storage: function(name) {
-            return _.inherit(_.storageAPI, { items: {}, name: name });
-        },
-        storageAPI: {
-            length: 0,
-            has: function(k){ return this.items.hasOwnProperty(k); },
-            key: function(i) {
-                var c = 0;
-                for (var k in this.items){
-                    if (this.has(k) && i === c++) {
-                        return k;
-                    }
-                }
-            },
-            setItem: function(k, v) {
-                if (!this.has(k)) {
-                    this.length++;
-                }
-                this.items[k] = v;
-            },
-            removeItem: function(k) {
-                if (this.has(k)) {
-                    delete this.items[k];
-                    this.length--;
-                }
-            },
-            getItem: function(k){ return this.has(k) ? this.items[k] : null; },
-            clear: function(){ for (var k in this.items){ this.removeItem(k); } }
-        }// end _.storageAPI
-    };
-
-    var store =
-        // safely set this up (throws error in IE10/32bit mode for local files)
-        _.Store("local", (function(){try{ return localStorage; }catch(e){}})());
-    store.local = store;// for completeness
-    store._ = _;// for extenders and debuggers...
-    // safely setup store.session (throws exception in FF for file:/// urls)
-    store.area("session", (function(){try{ return sessionStorage; }catch(e){}})());
-    store.area("page", _.storage("page"));
-
-    if (typeof define === 'function' && define.amd !== undefined) {
-        define('store2', [], function () {
-            return store;
-        });
-    } else if (module.exports) {
-        module.exports = store;
-    } else {
-        // expose the primary store fn to the global object and save conflicts
-        if (window.store){ _.conflict = window.store; }
-        window.store = store;
-    }
-
-})(commonjsGlobal, commonjsGlobal && commonjsGlobal.define);
-});
-
-class StoreWithExpiry {
-    constructor() {
-        this.set = (key, value, ttl = 3600 * 1000) => {
-            try {
-                const now = new Date();
-                const item = {
-                    value: value,
-                    expiry: now.getTime() + ttl,
-                };
-                this._store.set(key, item);
-                console.log('set_success', this._store.get(key));
-            }
-            catch (error) {
-                console.error('set_error', error);
-            }
-        };
-        this.get = (key) => {
-            const item = this._store.get(key);
-            if (!item) {
-                return null;
-            }
-            const now = new Date();
-            if (now.getTime() > item.expiry) {
-                this._store.remove(key);
-                return null;
-            }
-            return item.value;
-        };
-        this.remove = (key) => {
-            this._store.remove(key);
-        };
-        this.clearAll = () => {
-            this._store.clearAll();
-        };
-        this._store = store2;
-        if (isNodeEnv()) {
-            import('node-localstorage').then(({ LocalStorage }) => {
-                this._store.localstorage = new LocalStorage('./scratch');
-            });
-        }
-    }
-}
-const storeWithExpiry = new StoreWithExpiry();
-
 const SUCCESS_CODE = 10000;
 const AUTHERROT_CODE = 10005;
 const UNCONFIRMED_MSG = 'UNCONFIRMED';
-const createAxios = ({ baseURL, timeout = 3000, }) => {
+const createAxios = ({ baseURL, timeout = 100000, }) => {
     const instance = axios$1.create({
         baseURL,
         timeout,
@@ -4393,12 +4408,12 @@ const createAxios = ({ baseURL, timeout = 3000, }) => {
     return instance;
 };
 
-const LOGIN_METHODNAME = 'signIn';
 function dispatchHttpRequest$1() {
     const self = this;
     const fetch = createAxios({
         baseURL: this.config.httpUrl,
     });
+    self.fetch = fetch;
     const _keys = Object.keys(httpConfig);
     _keys.forEach((key) => {
         const subKeys = Object.keys(httpConfig[key]);
@@ -4409,17 +4424,12 @@ function dispatchHttpRequest$1() {
                     throw new Error('getConfig is not a function');
                 }
                 const config = getConfig && getConfig(data);
+                console.log(config);
+                const nextMethod = config === null || config === void 0 ? void 0 : config.callback;
+                delete config.callback;
                 const result = yield fetch(config);
-                if (methodName === LOGIN_METHODNAME) {
-                    const { AccessToken, ExpiresIn, RefreshToken, TokenType } = result.data.AuthenticationResult;
-                    storeWithExpiry.set('userInfo', {
-                        AccessToken,
-                        ExpiresIn,
-                        RefreshToken,
-                        TokenType,
-                    }, ExpiresIn * 1000);
-                    //@ts-ignore
-                    self.send && self.send('user_login');
+                if (nextMethod) {
+                    yield nextMethod.call(self, result);
                 }
                 return result;
             });
@@ -4503,11 +4513,12 @@ const user_login = (access_token = '', loginType = 'cognito') => {
     };
 };
 const message_up = ({ type, value, recipients = '', }) => {
+    var _a, _b;
     //   const store = getStore();
     return {
         type: 'message_up',
         request_id: v4(),
-        user_id: '',
+        user_id: ((_b = (_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.userInfo) === null || _b === void 0 ? void 0 : _b.user_id) || '',
         body: {
             subtype: type,
             content: typeof value === 'string'
@@ -4522,11 +4533,12 @@ const message_up = ({ type, value, recipients = '', }) => {
     };
 };
 const button_click = ({ featureId, arguments: arg, }) => {
+    var _a, _b;
     //   const store = getStore();
     return {
         type: 'button_click',
         request_id: v4(),
-        user_id: '',
+        user_id: ((_b = (_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.userInfo) === null || _b === void 0 ? void 0 : _b.user_id) || '',
         body: {
             button_id: featureId,
             channel_id: '',
@@ -4536,11 +4548,12 @@ const button_click = ({ featureId, arguments: arg, }) => {
     };
 };
 const menu_click = ({ item_id, message_id, message_subtype, message_content, arguments: arg, }) => {
+    var _a, _b;
     //   const store = getStore();
     return {
         type: 'menu_click',
         request_id: v4(),
-        user_id: '',
+        user_id: ((_b = (_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.userInfo) === null || _b === void 0 ? void 0 : _b.user_id) || '',
         body: {
             item_id,
             message_id,
@@ -4553,11 +4566,12 @@ const menu_click = ({ item_id, message_id, message_subtype, message_content, arg
     };
 };
 const action = ({ type, channelId, }) => {
+    var _a, _b;
     //   const store = getStore();
     return {
         type: 'action',
         request_id: v4(),
-        user_id: '',
+        user_id: ((_b = (_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.userInfo) === null || _b === void 0 ? void 0 : _b.user_id) || '',
         body: {
             subtype: type,
             channel_id: channelId,
@@ -4595,7 +4609,7 @@ class MSocket {
         this._socket = null;
         this.reconnectMaxCount = 3;
         this.heartbeatTime = 6000;
-        this.requestCallBackTimeout = 10000;
+        this.requestCallBackTimeout = 100000;
         this.requestCallbacks = {};
         this.heartbeatTimer = null;
         this.connect = () => __awaiter(this, void 0, void 0, function* () {
@@ -4603,6 +4617,7 @@ class MSocket {
             this._socket = yield this.createSocket();
             if (this._socket) {
                 this.open();
+                this.onMessage();
             }
             this.error();
         });
@@ -4621,8 +4636,20 @@ class MSocket {
                 }
             }, this.heartbeatTime);
         };
-        this.onMessage = (event) => {
-            console.log('onMessage', event);
+        this.onMessage = () => {
+            this._socket.onmessage = (event) => {
+                try {
+                    const { type, body } = JSON.parse(event.data);
+                    switch (type) {
+                        case 'copy':
+                            this.requestCallbacks[body.request_id](body);
+                            break;
+                    }
+                }
+                catch (error) {
+                    console.error(error);
+                }
+            };
         };
         this.createSocket = () => __awaiter(this, void 0, void 0, function* () {
             if (isWebSocketSupported) {
@@ -4661,6 +4688,7 @@ class MSocket {
                 }
                 if (this._socket.readyState === this._socket.OPEN) {
                     try {
+                        console.log('send:', this.requestCallbacks, requestId, this.requestCallbacks);
                         this.requestCallbacks[requestId] = (response) => {
                             clearTimeout(timeoutHandle);
                             resolve(response);
@@ -4715,9 +4743,9 @@ function dispatchHttpRequest() {
         if (!typeName.includes(type)) {
             throw new Error(`${type}: type is not exist`);
         }
-        // if (type === 'user_login') {
-        const config = socketConfig[type];
-        self.socket.send(config(data));
+        const getConfig = socketConfig[type];
+        const config = getConfig && getConfig(data);
+        yield self.socket.send(Object.assign({}, config));
     });
     // console.log(socketConfig);
 }

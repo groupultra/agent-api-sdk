@@ -1,8 +1,8 @@
 // Moobius-js-api-sdk v1.0.0 Copyright (c) 2024 moobius and contributors
 'use strict';
 
-const axios = require('axios');
 const store = require('store2');
+const axios = require('axios');
 const uuid = require('uuid');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
@@ -25,8 +25,8 @@ function _interopNamespace(e) {
     return Object.freeze(n);
 }
 
-const axios__default = /*#__PURE__*/_interopDefaultLegacy(axios);
 const store__default = /*#__PURE__*/_interopDefaultLegacy(store);
+const axios__default = /*#__PURE__*/_interopDefaultLegacy(axios);
 
 // 修复ts类型问题
 function bind(fn, thisArg) {
@@ -151,6 +151,151 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
+class StoreWithExpiry {
+    constructor() {
+        this.set = (key, value, ttl = 3600 * 1000) => {
+            try {
+                const now = new Date();
+                const item = {
+                    value: value,
+                    expiry: now.getTime() + ttl,
+                };
+                this._store.set(key, item);
+                console.log('set_success', this._store.get(key));
+            }
+            catch (error) {
+                console.error('set_error', error);
+            }
+        };
+        this.get = (key) => {
+            const item = this._store.get(key);
+            if (!item) {
+                return null;
+            }
+            const now = new Date();
+            if (now.getTime() > item.expiry) {
+                this._store.remove(key);
+                return null;
+            }
+            return item.value;
+        };
+        this.remove = (key) => {
+            this._store.remove(key);
+        };
+        this.clearAll = () => {
+            this._store.clearAll();
+        };
+        this._store = store__default["default"];
+        if (isNodeEnv()) {
+            Promise.resolve().then(function () { return /*#__PURE__*/_interopNamespace(require('node-localstorage')); }).then(({ LocalStorage }) => {
+                this._store.localstorage = new LocalStorage('./scratch');
+            });
+        }
+    }
+}
+const storeWithExpiry = new StoreWithExpiry();
+
+const getCurrentInfo = () => ({
+    url: '/user/info',
+    method: 'GET',
+});
+const updateCurrentInfo = (params) => ({
+    url: '/user/info',
+    method: 'POST',
+    data: params,
+});
+/** **********
+ * [whistle/ group]
+ */
+const groupList = (channel_id) => ({
+    url: '/user/group/list',
+    method: 'GET',
+    data: {
+        channel_id,
+    },
+});
+const groupUpdate = (data) => ({
+    url: '/user/group/update',
+    method: 'POST',
+    data,
+});
+const groupCreate = (data) => ({
+    url: '/user/group/create',
+    method: 'POST',
+    data,
+});
+const groupDel = (channel_id, group_id) => ({
+    url: '/user/group/delete',
+    method: 'POST',
+    data: {
+        channel_id,
+        group_id,
+    },
+});
+/** **********
+ * [temp]
+ */
+const getGroupTemp = (channel_id) => ({
+    url: '/user/group/temp',
+    method: 'GET',
+    data: {
+        channel_id,
+    },
+});
+const updateGrouptemp = (data) => ({
+    url: '/user/group/temp',
+    method: 'POST',
+    data,
+});
+/** **********
+ * [TargetGroup description]
+ */
+const group = (data) => ({
+    url: '/user/group',
+    method: 'GET',
+    data,
+});
+const ServiceGroup = (group_id) => ({
+    url: '/service/group',
+    method: 'GET',
+    data: {
+        group_id,
+    },
+});
+/** **********
+ * [Character]
+ */
+const characterFetchProfile = (character_list) => ({
+    url: '/character/fetch_profile',
+    method: 'GET',
+    data: {
+        character_list,
+    },
+});
+const getUserProfile = (character_list) => ({
+    url: '/character/fetch_profile',
+    method: 'POST',
+    data: {
+        character_list,
+    },
+});
+
+const user = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    getCurrentInfo: getCurrentInfo,
+    updateCurrentInfo: updateCurrentInfo,
+    groupList: groupList,
+    groupUpdate: groupUpdate,
+    groupCreate: groupCreate,
+    groupDel: groupDel,
+    getGroupTemp: getGroupTemp,
+    updateGrouptemp: updateGrouptemp,
+    group: group,
+    ServiceGroup: ServiceGroup,
+    characterFetchProfile: characterFetchProfile,
+    getUserProfile: getUserProfile
+});
+
 const signUp = (params) => ({
     url: '/auth/sign_up',
     method: 'POST',
@@ -165,6 +310,21 @@ const signIn = (params) => ({
     data: params,
     config: {
         ignoreAuth: true,
+    },
+    callback: function (result) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { AccessToken, ExpiresIn, RefreshToken, TokenType } = result.data.AuthenticationResult;
+            console.log('result', result);
+            const userInfo = yield this.fetch(getCurrentInfo());
+            storeWithExpiry.set('userInfo', {
+                AccessToken,
+                ExpiresIn,
+                RefreshToken,
+                TokenType,
+                userInfo: (userInfo === null || userInfo === void 0 ? void 0 : userInfo.data) || null,
+            }, ExpiresIn * 1000);
+            yield (this === null || this === void 0 ? void 0 : this.send('user_login'));
+        });
     },
 });
 const signOut = (params) => ({
@@ -293,107 +453,6 @@ const file = /*#__PURE__*/Object.freeze({
     fetchFileDownload: fetchFileDownload
 });
 
-const getCurrentInfo = () => ({
-    url: '/user/info',
-    method: 'GET',
-});
-const updateCurrentInfo = (params) => ({
-    url: '/user/info',
-    method: 'POST',
-    data: params,
-});
-/** **********
- * [whistle/ group]
- */
-const groupList = (channel_id) => ({
-    url: '/user/group/list',
-    method: 'GET',
-    data: {
-        channel_id,
-    },
-});
-const groupUpdate = (data) => ({
-    url: '/user/group/update',
-    method: 'POST',
-    data,
-});
-const groupCreate = (data) => ({
-    url: '/user/group/create',
-    method: 'POST',
-    data,
-});
-const groupDel = (channel_id, group_id) => ({
-    url: '/user/group/delete',
-    method: 'POST',
-    data: {
-        channel_id,
-        group_id,
-    },
-});
-/** **********
- * [temp]
- */
-const getGroupTemp = (channel_id) => ({
-    url: '/user/group/temp',
-    method: 'GET',
-    data: {
-        channel_id,
-    },
-});
-const updateGrouptemp = (data) => ({
-    url: '/user/group/temp',
-    method: 'POST',
-    data,
-});
-/** **********
- * [TargetGroup description]
- */
-const group = (data) => ({
-    url: '/user/group',
-    method: 'GET',
-    data,
-});
-const ServiceGroup = (group_id) => ({
-    url: '/service/group',
-    method: 'GET',
-    data: {
-        group_id,
-    },
-});
-/** **********
- * [Character]
- */
-const characterFetchProfile = (character_list) => ({
-    url: '/character/fetch_profile',
-    method: 'GET',
-    data: {
-        character_list,
-    },
-});
-const getUserProfile = (character_list) => ({
-    url: '/character/fetch_profile',
-    method: 'POST',
-    data: {
-        character_list,
-    },
-});
-
-const user = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    getCurrentInfo: getCurrentInfo,
-    updateCurrentInfo: updateCurrentInfo,
-    groupList: groupList,
-    groupUpdate: groupUpdate,
-    groupCreate: groupCreate,
-    groupDel: groupDel,
-    getGroupTemp: getGroupTemp,
-    updateGrouptemp: updateGrouptemp,
-    group: group,
-    ServiceGroup: ServiceGroup,
-    characterFetchProfile: characterFetchProfile,
-    getUserProfile: getUserProfile
-});
-
 const httpConfig = {
     auth,
     channel,
@@ -401,54 +460,10 @@ const httpConfig = {
     user,
 };
 
-class StoreWithExpiry {
-    constructor() {
-        this.set = (key, value, ttl = 3600 * 1000) => {
-            try {
-                const now = new Date();
-                const item = {
-                    value: value,
-                    expiry: now.getTime() + ttl,
-                };
-                this._store.set(key, item);
-                console.log('set_success', this._store.get(key));
-            }
-            catch (error) {
-                console.error('set_error', error);
-            }
-        };
-        this.get = (key) => {
-            const item = this._store.get(key);
-            if (!item) {
-                return null;
-            }
-            const now = new Date();
-            if (now.getTime() > item.expiry) {
-                this._store.remove(key);
-                return null;
-            }
-            return item.value;
-        };
-        this.remove = (key) => {
-            this._store.remove(key);
-        };
-        this.clearAll = () => {
-            this._store.clearAll();
-        };
-        this._store = store__default["default"];
-        if (isNodeEnv()) {
-            Promise.resolve().then(function () { return /*#__PURE__*/_interopNamespace(require('node-localstorage')); }).then(({ LocalStorage }) => {
-                this._store.localstorage = new LocalStorage('./scratch');
-            });
-        }
-    }
-}
-const storeWithExpiry = new StoreWithExpiry();
-
 const SUCCESS_CODE = 10000;
 const AUTHERROT_CODE = 10005;
 const UNCONFIRMED_MSG = 'UNCONFIRMED';
-const createAxios = ({ baseURL, timeout = 3000, }) => {
+const createAxios = ({ baseURL, timeout = 100000, }) => {
     const instance = axios__default["default"].create({
         baseURL,
         timeout,
@@ -486,12 +501,12 @@ const createAxios = ({ baseURL, timeout = 3000, }) => {
     return instance;
 };
 
-const LOGIN_METHODNAME = 'signIn';
 function dispatchHttpRequest$1() {
     const self = this;
     const fetch = createAxios({
         baseURL: this.config.httpUrl,
     });
+    self.fetch = fetch;
     const _keys = Object.keys(httpConfig);
     _keys.forEach((key) => {
         const subKeys = Object.keys(httpConfig[key]);
@@ -502,17 +517,12 @@ function dispatchHttpRequest$1() {
                     throw new Error('getConfig is not a function');
                 }
                 const config = getConfig && getConfig(data);
+                console.log(config);
+                const nextMethod = config === null || config === void 0 ? void 0 : config.callback;
+                delete config.callback;
                 const result = yield fetch(config);
-                if (methodName === LOGIN_METHODNAME) {
-                    const { AccessToken, ExpiresIn, RefreshToken, TokenType } = result.data.AuthenticationResult;
-                    storeWithExpiry.set('userInfo', {
-                        AccessToken,
-                        ExpiresIn,
-                        RefreshToken,
-                        TokenType,
-                    }, ExpiresIn * 1000);
-                    //@ts-ignore
-                    self.send && self.send('user_login');
+                if (nextMethod) {
+                    yield nextMethod.call(self, result);
                 }
                 return result;
             });
@@ -531,11 +541,12 @@ const user_login = (access_token = '', loginType = 'cognito') => {
     };
 };
 const message_up = ({ type, value, recipients = '', }) => {
+    var _a, _b;
     //   const store = getStore();
     return {
         type: 'message_up',
         request_id: uuid.v4(),
-        user_id: '',
+        user_id: ((_b = (_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.userInfo) === null || _b === void 0 ? void 0 : _b.user_id) || '',
         body: {
             subtype: type,
             content: typeof value === 'string'
@@ -550,11 +561,12 @@ const message_up = ({ type, value, recipients = '', }) => {
     };
 };
 const button_click = ({ featureId, arguments: arg, }) => {
+    var _a, _b;
     //   const store = getStore();
     return {
         type: 'button_click',
         request_id: uuid.v4(),
-        user_id: '',
+        user_id: ((_b = (_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.userInfo) === null || _b === void 0 ? void 0 : _b.user_id) || '',
         body: {
             button_id: featureId,
             channel_id: '',
@@ -564,11 +576,12 @@ const button_click = ({ featureId, arguments: arg, }) => {
     };
 };
 const menu_click = ({ item_id, message_id, message_subtype, message_content, arguments: arg, }) => {
+    var _a, _b;
     //   const store = getStore();
     return {
         type: 'menu_click',
         request_id: uuid.v4(),
-        user_id: '',
+        user_id: ((_b = (_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.userInfo) === null || _b === void 0 ? void 0 : _b.user_id) || '',
         body: {
             item_id,
             message_id,
@@ -581,11 +594,12 @@ const menu_click = ({ item_id, message_id, message_subtype, message_content, arg
     };
 };
 const action = ({ type, channelId, }) => {
+    var _a, _b;
     //   const store = getStore();
     return {
         type: 'action',
         request_id: uuid.v4(),
-        user_id: '',
+        user_id: ((_b = (_a = storeWithExpiry.get('userInfo')) === null || _a === void 0 ? void 0 : _a.userInfo) === null || _b === void 0 ? void 0 : _b.user_id) || '',
         body: {
             subtype: type,
             channel_id: channelId,
@@ -623,7 +637,7 @@ class MSocket {
         this._socket = null;
         this.reconnectMaxCount = 3;
         this.heartbeatTime = 6000;
-        this.requestCallBackTimeout = 10000;
+        this.requestCallBackTimeout = 100000;
         this.requestCallbacks = {};
         this.heartbeatTimer = null;
         this.connect = () => __awaiter(this, void 0, void 0, function* () {
@@ -631,6 +645,7 @@ class MSocket {
             this._socket = yield this.createSocket();
             if (this._socket) {
                 this.open();
+                this.onMessage();
             }
             this.error();
         });
@@ -649,8 +664,20 @@ class MSocket {
                 }
             }, this.heartbeatTime);
         };
-        this.onMessage = (event) => {
-            console.log('onMessage', event);
+        this.onMessage = () => {
+            this._socket.onmessage = (event) => {
+                try {
+                    const { type, body } = JSON.parse(event.data);
+                    switch (type) {
+                        case 'copy':
+                            this.requestCallbacks[body.request_id](body);
+                            break;
+                    }
+                }
+                catch (error) {
+                    console.error(error);
+                }
+            };
         };
         this.createSocket = () => __awaiter(this, void 0, void 0, function* () {
             if (isWebSocketSupported) {
@@ -689,6 +716,7 @@ class MSocket {
                 }
                 if (this._socket.readyState === this._socket.OPEN) {
                     try {
+                        console.log('send:', this.requestCallbacks, requestId, this.requestCallbacks);
                         this.requestCallbacks[requestId] = (response) => {
                             clearTimeout(timeoutHandle);
                             resolve(response);
@@ -743,9 +771,9 @@ function dispatchHttpRequest() {
         if (!typeName.includes(type)) {
             throw new Error(`${type}: type is not exist`);
         }
-        // if (type === 'user_login') {
-        const config = socketConfig[type];
-        self.socket.send(config(data));
+        const getConfig = socketConfig[type];
+        const config = getConfig && getConfig(data);
+        yield self.socket.send(Object.assign({}, config));
     });
     // console.log(socketConfig);
 }

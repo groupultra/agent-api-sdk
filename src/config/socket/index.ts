@@ -123,7 +123,7 @@ export const message_up = ({
   return {
     type: 'message_up',
     request_id: v4(),
-    user_id: '',
+    user_id: storage.get<USER_INFO>('userInfo')?.userInfo?.user_id || '',
     body: {
       subtype: type,
       content:
@@ -150,7 +150,7 @@ export const button_click = ({
   return {
     type: 'button_click',
     request_id: v4(),
-    user_id: '',
+    user_id: storage.get<USER_INFO>('userInfo')?.userInfo?.user_id || '',
     body: {
       button_id: featureId,
       channel_id: '',
@@ -179,7 +179,7 @@ export const menu_click = ({
   return {
     type: 'menu_click',
     request_id: v4(),
-    user_id: '',
+    user_id: storage.get<USER_INFO>('userInfo')?.userInfo?.user_id || '',
     body: {
       item_id,
       message_id,
@@ -202,7 +202,7 @@ export const action = ({
   return {
     type: 'action',
     request_id: v4(),
-    user_id: '',
+    user_id: storage.get<USER_INFO>('userInfo')?.userInfo?.user_id || '',
     body: {
       subtype: type,
       channel_id: channelId,

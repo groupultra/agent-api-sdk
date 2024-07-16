@@ -5,4 +5,5 @@ export type BASE_HTTP_RESPONSE<T = undefined> = {
   config?: {
     ignoreAuth?: boolean;
   };
+  callback?: (data: any) => void;
 };

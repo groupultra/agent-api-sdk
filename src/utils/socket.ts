@@ -12,7 +12,7 @@ export class MSocket {
   public _socket: WebSocket | null = null;
   public reconnectMaxCount: number = 3;
   public heartbeatTime: number = 6000;
-  private requestCallBackTimeout: number = 10000;
+  private requestCallBackTimeout: number = 100000;
   private requestCallbacks: Record<string, (response: any) => void> = {};
   public heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   constructor(url: string, option: IWSOptions) {
@@ -27,6 +27,7 @@ export class MSocket {
     this._socket = await this.createSocket();
     if (this._socket) {
       this.open();
+      this.onMessage();
     }
     this.error();
   };
@@ -56,6 +57,12 @@ export class MSocket {
         }
         if (this._socket!.readyState === this._socket!.OPEN) {
           try {
+            console.log(
+              'send:',
+              this.requestCallbacks,
+              requestId,
+              this.requestCallbacks,
+            );
             this.requestCallbacks[requestId] = (response) => {
               clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
               resolve(response);
@@ -109,8 +116,19 @@ export class MSocket {
     clearInterval(this.heartbeatTimer as ReturnType<typeof setInterval>);
     this._socket = null;
   }
-  onMessage = (event: MessageEvent) => {
-    console.log('onMessage', event);
+  onMessage = () => {
+    this._socket!.onmessage = (event) => {
+      try {
+        const { type, body } = JSON.parse(event.data);
+        switch (type) {
+          case 'copy':
+            this.requestCallbacks[body.request_id](body);
+            break;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
   };
   createSocket = async () => {
     if (isWebSocketSupported) {

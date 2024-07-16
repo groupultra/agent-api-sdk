@@ -1,6 +1,7 @@
 import * as socketConfig from '@/config/socket/index';
 import createSocket from '@/utils/socket';
 import type MoobiusSDK from './Moobius';
+
 type MoobiusSDKWithIndex = MoobiusSDK & {
   socket: ReturnType<typeof createSocket>;
   send: (type: keyof typeof socketConfig, data: any) => void;
@@ -17,9 +18,11 @@ export default function dispatchHttpRequest(this: MoobiusSDK) {
     if (!typeName.includes(type)) {
       throw new Error(`${type}: type is not exist`);
     }
-    // if (type === 'user_login') {
-    const config = socketConfig[type];
-    self.socket.send(config(data) as any);
+    const getConfig = socketConfig[type];
+    const config = getConfig && (getConfig as any)(data);
+    await self.socket.send({
+      ...config,
+    } as any);
   };
   // console.log(socketConfig);
 }
