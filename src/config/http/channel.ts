@@ -93,7 +93,7 @@ export const list = (): BASE_HTTP_RESPONSE => ({
  * [history]
  */
 
-export const historyMessage = (params: {
+export const history_message = (params: {
   channel_id: string;
   before?: number; // 时间戳 s
   after?: number; // 时间戳 s

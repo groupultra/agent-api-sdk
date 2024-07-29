@@ -1,17 +1,12 @@
 import * as socketConfig from '@/config/socket/index';
+import type MoobiusBASIC from '@/core/baseMoobius';
 import createSocket from '@/utils/socket';
-import type MoobiusSDK from './Moobius';
 
-type MoobiusSDKWithIndex = MoobiusSDK & {
-  socket: ReturnType<typeof createSocket>;
-  send: (type: keyof typeof socketConfig, data: any) => void;
-};
-export default function dispatchHttpRequest(this: MoobiusSDK) {
-  const self = this as MoobiusSDKWithIndex;
-  self.socket = createSocket(this.config.wsUrl as string, {
+export default function dispatchHttpRequest(this: MoobiusBASIC) {
+  this.socket = createSocket(this.config.wsUrl as string, {
     onMessageEvent: {},
   });
-  self.send = async (type: keyof typeof socketConfig, data: any) => {
+  this.send = async (type: keyof typeof socketConfig, data: any) => {
     const typeName = Object.keys(socketConfig) as Array<
       keyof typeof socketConfig
     >;
@@ -20,7 +15,7 @@ export default function dispatchHttpRequest(this: MoobiusSDK) {
     }
     const getConfig = socketConfig[type];
     const config = getConfig && (getConfig as any)(data);
-    await self.socket.send({
+    await this.socket.send({
       ...config,
     } as any);
   };

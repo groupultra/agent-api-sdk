@@ -28,14 +28,10 @@ server = http.createServer(function (req, res) {
 
   if (pathname === '/index.html') {
     pipeFileToResponse(res, './client.html');
-  } else if (pathname === '/moobius-api-sdk.js') {
-    pipeFileToResponse(res, '../dist//moobius-api-sdk.js', 'text/javascript');
-  } else if (pathname === '/moobius-api-sdk.js.map') {
-    pipeFileToResponse(
-      res,
-      '../dist//moobius-api-sdk.js.map',
-      'text/javascript',
-    );
+  } else if (pathname === '/moobius.js') {
+    pipeFileToResponse(res, '../dist//moobius.js', 'text/javascript');
+  } else if (pathname === '/moobius.js.map') {
+    pipeFileToResponse(res, '../dist//moobius.js.map', 'text/javascript');
   } else {
     res.writeHead(404);
     res.end('<h1>404 Not Found</h1>');

@@ -29,7 +29,6 @@ const createAxios = ({
     };
     if (!(internalConfig.config && internalConfig.config.ignoreAuth)) {
       const userInfo = storage.get<USER_INFO>('userInfo');
-      console.log('userInfo:::', userInfo);
       if (!userInfo) {
         // 获取不到用户信息 可能未登录 可能token过期
         return Promise.reject(

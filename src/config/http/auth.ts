@@ -1,7 +1,9 @@
+import type MoobiusBASIC from '@/core/baseMoobius';
 import storage from '@/utils/storage';
 import { BASE_HTTP_RESPONSE } from './baseHttpResponse';
 import type { CURRENTUSERINFO } from './channel';
-import { getCurrentInfo } from './user';
+import { get_user_info } from './user';
+
 export type SIGN_PARAMS = {
   password?: string;
   username?: string;
@@ -22,10 +24,10 @@ export type USER_INFO = {
     };
     email: string;
     context: CURRENTUSERINFO['context'];
-  };
+  } | null;
 };
 
-export const signUp = (
+export const sign_up = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/sign_up',
@@ -36,7 +38,7 @@ export const signUp = (
   },
 });
 
-export const signIn = (
+export const sign_in = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/sign_in',
@@ -45,11 +47,21 @@ export const signIn = (
   config: {
     ignoreAuth: true,
   },
-  callback: async function (result) {
+  callback: async function (this: MoobiusBASIC, result) {
     const { AccessToken, ExpiresIn, RefreshToken, TokenType } =
       result.data.AuthenticationResult;
-    console.log('result', result);
-    const userInfo = await (this as any).fetch(getCurrentInfo());
+    storage.set<USER_INFO>(
+      'userInfo',
+      {
+        AccessToken,
+        ExpiresIn,
+        RefreshToken,
+        TokenType,
+        userInfo: null,
+      },
+      ExpiresIn * 1000,
+    );
+    const userInfo = await this.fetch(get_user_info());
     storage.set<USER_INFO>(
       'userInfo',
       {
@@ -61,11 +73,11 @@ export const signIn = (
       },
       ExpiresIn * 1000,
     );
-    await (this as any)?.send('user_login');
+    await this?.send('user_login');
   },
 });
 
-export const signOut = (params: {
+export const sign_out = (params: {
   access_token: string;
 }): BASE_HTTP_RESPONSE<{
   access_token: string;
@@ -93,7 +105,7 @@ export const refresh = (params: {
   },
 });
 
-export const confirmSignUp = (
+export const confirm_sign_up = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/confirm_sign_up',
@@ -104,7 +116,7 @@ export const confirmSignUp = (
   },
 });
 
-export const resendConfirm = (
+export const resend_confirmation = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/resend_confirmation',
@@ -115,7 +127,7 @@ export const resendConfirm = (
   },
 });
 
-export const confirmResetPassword = (
+export const confirm_reset_password = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/confirm_reset_password',
@@ -126,7 +138,7 @@ export const confirmResetPassword = (
   },
 });
 
-export const forgotPassword = (
+export const forgot_password = (
   params: SIGN_PARAMS,
 ): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
   url: '/auth/forgot_password',

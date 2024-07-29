@@ -1,6 +1,6 @@
 {
   "name": "moobius",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "main": "dist/node/moobius-api-sdk.cjs",
   "module": "dist/esm/moobius-api-sdk.js",
   "exports": {

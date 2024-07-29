@@ -57,15 +57,10 @@ export class MSocket {
         }
         if (this._socket!.readyState === this._socket!.OPEN) {
           try {
-            console.log(
-              'send:',
-              this.requestCallbacks,
-              requestId,
-              this.requestCallbacks,
-            );
             this.requestCallbacks[requestId] = (response) => {
               clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
               resolve(response);
+              delete this.requestCallbacks[requestId];
             };
             this._socket!.send(JSON.stringify(data));
             timeoutHandle = setTimeout(() => {
@@ -96,13 +91,11 @@ export class MSocket {
   heartbeat = () => {
     this.heartbeatTimer = setInterval(() => {
       if (this._socket?.readyState === WebSocket.OPEN) {
-        this._socket.send(
-          JSON.stringify({
-            type: 'heartbeat',
-            request_id: v4(),
-            body: {},
-          }),
-        );
+        this.send({
+          type: 'heartbeat',
+          request_id: v4(),
+          body: {},
+        });
       }
     }, this.heartbeatTime);
   };

@@ -1,14 +1,12 @@
 import type { MoobiusBasicConfig } from '@/index.d';
 import { mergeDeep } from '@/utils/index';
+import MoobiusBASIC from './baseMoobius';
 import dispatchHttpRequest from './dispatchHttpRequest';
 import dispatchWsRequest from './dispatchWsRequest';
 
-class MoobiusBASIC {}
 export class MoobiusSDK extends MoobiusBASIC {
-  defaults: MoobiusBasicConfig;
-  config: MoobiusBasicConfig & {};
   constructor(instanceConfig: MoobiusBasicConfig) {
-    setup();
+    super();
     this.defaults = instanceConfig;
     this.config = instanceConfig;
   }

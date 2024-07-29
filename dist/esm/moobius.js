@@ -92,6 +92,54 @@ const isNodeEnv = () => {
     return typeof process !== 'undefined' && kindOf$1(process) === 'process';
 };
 
+class MoobiusBASIC {
+    constructor() {
+        this.defaults = {
+            httpUrl: '',
+            wsUrl: '',
+        };
+        this.config = {
+            httpUrl: '',
+            wsUrl: '',
+        };
+        this.auth = {
+            sign_up: () => { },
+            sign_in: () => { },
+            sign_out: () => { },
+            refresh: () => { },
+            confirm_sign_up: () => { },
+            resend_confirmation: () => { },
+            confirm_reset_password: () => { },
+            forgot_password: () => { },
+        };
+        this.channel = {
+            create: () => { },
+            update: () => { },
+            popular: () => { },
+            list: () => { },
+            history_message: () => { },
+        };
+        this.file = {};
+        this.user = {
+            get_user_info: () => { },
+            post_user_info: () => { },
+            group_list: () => { },
+            group_update: () => { },
+            group_create: () => { },
+            group_delete: () => { },
+            get_group_temp: () => { },
+            post_group_temp: () => { },
+            get_group: () => { },
+            get_service_group: () => { },
+            get_character_profile: () => { },
+            post_character_profile: () => { },
+        };
+        this.send = () => { };
+        this.socket = {};
+        this.fetch = () => { };
+    }
+}
+
 /******************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -466,11 +514,11 @@ class StoreWithExpiry {
 }
 const storeWithExpiry = new StoreWithExpiry();
 
-const getCurrentInfo = () => ({
+const get_user_info = () => ({
     url: '/user/info',
     method: 'GET',
 });
-const updateCurrentInfo = (params) => ({
+const post_user_info = (params) => ({
     url: '/user/info',
     method: 'POST',
     data: params,
@@ -478,24 +526,24 @@ const updateCurrentInfo = (params) => ({
 /** **********
  * [whistle/ group]
  */
-const groupList = (channel_id) => ({
+const group_list = (channel_id) => ({
     url: '/user/group/list',
     method: 'GET',
     data: {
         channel_id,
     },
 });
-const groupUpdate = (data) => ({
+const group_update = (data) => ({
     url: '/user/group/update',
     method: 'POST',
     data,
 });
-const groupCreate = (data) => ({
+const group_create = (data) => ({
     url: '/user/group/create',
     method: 'POST',
     data,
 });
-const groupDel = (channel_id, group_id) => ({
+const group_delete = (channel_id, group_id) => ({
     url: '/user/group/delete',
     method: 'POST',
     data: {
@@ -506,14 +554,14 @@ const groupDel = (channel_id, group_id) => ({
 /** **********
  * [temp]
  */
-const getGroupTemp = (channel_id) => ({
+const get_group_temp = (channel_id) => ({
     url: '/user/group/temp',
     method: 'GET',
     data: {
         channel_id,
     },
 });
-const updateGrouptemp = (data) => ({
+const post_group_temp = (data) => ({
     url: '/user/group/temp',
     method: 'POST',
     data,
@@ -521,12 +569,12 @@ const updateGrouptemp = (data) => ({
 /** **********
  * [TargetGroup description]
  */
-const group = (data) => ({
+const get_group = (data) => ({
     url: '/user/group',
     method: 'GET',
     data,
 });
-const ServiceGroup = (group_id) => ({
+const get_service_group = (group_id) => ({
     url: '/service/group',
     method: 'GET',
     data: {
@@ -536,14 +584,14 @@ const ServiceGroup = (group_id) => ({
 /** **********
  * [Character]
  */
-const characterFetchProfile = (character_list) => ({
+const get_character_profile = (character_list) => ({
     url: '/character/fetch_profile',
     method: 'GET',
     data: {
         character_list,
     },
 });
-const getUserProfile = (character_list) => ({
+const post_character_profile = (character_list) => ({
     url: '/character/fetch_profile',
     method: 'POST',
     data: {
@@ -553,21 +601,21 @@ const getUserProfile = (character_list) => ({
 
 const user = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    getCurrentInfo: getCurrentInfo,
-    updateCurrentInfo: updateCurrentInfo,
-    groupList: groupList,
-    groupUpdate: groupUpdate,
-    groupCreate: groupCreate,
-    groupDel: groupDel,
-    getGroupTemp: getGroupTemp,
-    updateGrouptemp: updateGrouptemp,
-    group: group,
-    ServiceGroup: ServiceGroup,
-    characterFetchProfile: characterFetchProfile,
-    getUserProfile: getUserProfile
+    get_user_info: get_user_info,
+    post_user_info: post_user_info,
+    group_list: group_list,
+    group_update: group_update,
+    group_create: group_create,
+    group_delete: group_delete,
+    get_group_temp: get_group_temp,
+    post_group_temp: post_group_temp,
+    get_group: get_group,
+    get_service_group: get_service_group,
+    get_character_profile: get_character_profile,
+    post_character_profile: post_character_profile
 });
 
-const signUp = (params) => ({
+const sign_up = (params) => ({
     url: '/auth/sign_up',
     method: 'POST',
     data: params,
@@ -575,7 +623,7 @@ const signUp = (params) => ({
         ignoreAuth: true,
     },
 });
-const signIn = (params) => ({
+const sign_in = (params) => ({
     url: '/auth/sign_in',
     method: 'POST',
     data: params,
@@ -585,8 +633,14 @@ const signIn = (params) => ({
     callback: function (result) {
         return __awaiter(this, void 0, void 0, function* () {
             const { AccessToken, ExpiresIn, RefreshToken, TokenType } = result.data.AuthenticationResult;
-            console.log('result', result);
-            const userInfo = yield this.fetch(getCurrentInfo());
+            storeWithExpiry.set('userInfo', {
+                AccessToken,
+                ExpiresIn,
+                RefreshToken,
+                TokenType,
+                userInfo: null,
+            }, ExpiresIn * 1000);
+            const userInfo = yield this.fetch(get_user_info());
             storeWithExpiry.set('userInfo', {
                 AccessToken,
                 ExpiresIn,
@@ -598,7 +652,7 @@ const signIn = (params) => ({
         });
     },
 });
-const signOut = (params) => ({
+const sign_out = (params) => ({
     url: '/auth/sign_out',
     method: 'POST',
     data: params,
@@ -614,7 +668,7 @@ const refresh = (params) => ({
         ignoreAuth: true,
     },
 });
-const confirmSignUp = (params) => ({
+const confirm_sign_up = (params) => ({
     url: '/auth/confirm_sign_up',
     method: 'POST',
     data: params,
@@ -622,7 +676,7 @@ const confirmSignUp = (params) => ({
         ignoreAuth: true,
     },
 });
-const resendConfirm = (params) => ({
+const resend_confirmation = (params) => ({
     url: '/auth/resend_confirmation',
     method: 'POST',
     data: params,
@@ -630,7 +684,7 @@ const resendConfirm = (params) => ({
         ignoreAuth: true,
     },
 });
-const confirmResetPassword = (params) => ({
+const confirm_reset_password = (params) => ({
     url: '/auth/confirm_reset_password',
     method: 'POST',
     data: params,
@@ -638,7 +692,7 @@ const confirmResetPassword = (params) => ({
         ignoreAuth: true,
     },
 });
-const forgotPassword = (params) => ({
+const forgot_password = (params) => ({
     url: '/auth/forgot_password',
     method: 'POST',
     data: params,
@@ -649,14 +703,14 @@ const forgotPassword = (params) => ({
 
 const auth = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    signUp: signUp,
-    signIn: signIn,
-    signOut: signOut,
+    sign_up: sign_up,
+    sign_in: sign_in,
+    sign_out: sign_out,
     refresh: refresh,
-    confirmSignUp: confirmSignUp,
-    resendConfirm: resendConfirm,
-    confirmResetPassword: confirmResetPassword,
-    forgotPassword: forgotPassword
+    confirm_sign_up: confirm_sign_up,
+    resend_confirmation: resend_confirmation,
+    confirm_reset_password: confirm_reset_password,
+    forgot_password: forgot_password
 });
 
 const create = (channel_name, channel_description) => ({
@@ -688,7 +742,7 @@ const list = () => ({
 /** **********
  * [history]
  */
-const historyMessage = (params) => {
+const history_message = (params) => {
     params.before === 0
         ? delete params.before
         : (params.before = params.before / 1000);
@@ -708,7 +762,7 @@ const channel = /*#__PURE__*/Object.freeze({
     update: update,
     popular: popular,
     list: list,
-    historyMessage: historyMessage
+    history_message: history_message
 });
 
 // export const fetchFileUpload = async (
@@ -4379,7 +4433,6 @@ const createAxios = ({ baseURL, timeout = 100000, }) => {
         const internalConfig = config;
         if (!(internalConfig.config && internalConfig.config.ignoreAuth)) {
             const userInfo = storeWithExpiry.get('userInfo');
-            console.log('userInfo:::', userInfo);
             if (!userInfo) {
                 // 获取不到用户信息 可能未登录 可能token过期
                 return Promise.reject(new Error(`You do not have permission to request ${config.url}`));
@@ -4409,15 +4462,13 @@ const createAxios = ({ baseURL, timeout = 100000, }) => {
 };
 
 function dispatchHttpRequest$1() {
-    const self = this;
-    const fetch = createAxios({
+    this.fetch = createAxios({
         baseURL: this.config.httpUrl,
     });
-    self.fetch = fetch;
     const _keys = Object.keys(httpConfig);
     _keys.forEach((key) => {
         const subKeys = Object.keys(httpConfig[key]);
-        self[key] = subKeys.reduce((acc, methodName) => {
+        this[key] = subKeys.reduce((acc, methodName) => {
             const getConfig = httpConfig[key][methodName];
             acc[methodName] = (data) => __awaiter(this, void 0, void 0, function* () {
                 if (typeof getConfig !== 'function') {
@@ -4427,9 +4478,9 @@ function dispatchHttpRequest$1() {
                 console.log(config);
                 const nextMethod = config === null || config === void 0 ? void 0 : config.callback;
                 delete config.callback;
-                const result = yield fetch(config);
+                const result = yield this.fetch(config);
                 if (nextMethod) {
-                    yield nextMethod.call(self, result);
+                    yield nextMethod.call(this, result);
                 }
                 return result;
             });
@@ -4628,11 +4679,11 @@ class MSocket {
             this.heartbeatTimer = setInterval(() => {
                 var _a;
                 if (((_a = this._socket) === null || _a === void 0 ? void 0 : _a.readyState) === WebSocket.OPEN) {
-                    this._socket.send(JSON.stringify({
+                    this.send({
                         type: 'heartbeat',
                         request_id: v4(),
                         body: {},
-                    }));
+                    });
                 }
             }, this.heartbeatTime);
         };
@@ -4688,10 +4739,10 @@ class MSocket {
                 }
                 if (this._socket.readyState === this._socket.OPEN) {
                     try {
-                        console.log('send:', this.requestCallbacks, requestId, this.requestCallbacks);
                         this.requestCallbacks[requestId] = (response) => {
                             clearTimeout(timeoutHandle);
                             resolve(response);
+                            delete this.requestCallbacks[requestId];
                         };
                         this._socket.send(JSON.stringify(data));
                         timeoutHandle = setTimeout(() => {
@@ -4734,24 +4785,24 @@ function createSocket(url, option) {
 }
 
 function dispatchHttpRequest() {
-    const self = this;
-    self.socket = createSocket(this.config.wsUrl, {
+    this.socket = createSocket(this.config.wsUrl, {
         onMessageEvent: {},
     });
-    self.send = (type, data) => __awaiter(this, void 0, void 0, function* () {
+    this.send = (type, data) => __awaiter(this, void 0, void 0, function* () {
         const typeName = Object.keys(socketConfig);
         if (!typeName.includes(type)) {
             throw new Error(`${type}: type is not exist`);
         }
         const getConfig = socketConfig[type];
         const config = getConfig && getConfig(data);
-        yield self.socket.send(Object.assign({}, config));
+        yield this.socket.send(Object.assign({}, config));
     });
     // console.log(socketConfig);
 }
 
-class MoobiusSDK {
+class MoobiusSDK extends MoobiusBASIC {
     constructor(instanceConfig) {
+        super();
         this.defaults = instanceConfig;
         this.config = instanceConfig;
     }

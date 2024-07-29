@@ -4,6 +4,7 @@
     "target": "ES6",
     "module": "ESNext",
     "noEmitOnError": true,
+    "declaration": true,
     "lib": ["ESNext", "DOM"],
     "esModuleInterop": true,
     "skipLibCheck": true,

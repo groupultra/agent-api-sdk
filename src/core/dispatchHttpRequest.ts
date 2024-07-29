@@ -1,6 +1,6 @@
 import httpConfig from '@/config/http/index';
+import type MoobiusBASIC from '@/core/baseMoobius';
 import createFetch from '@/utils/http';
-import type MoobiusSDK from './Moobius';
 type HTTPCONFIG = typeof httpConfig;
 type TYPENAME = keyof HTTPCONFIG;
 type ExtractConfig<T> = T extends (data: infer U) => infer R
@@ -9,27 +9,18 @@ type ExtractConfig<T> = T extends (data: infer U) => infer R
 type ITEMHTTPCONFIG = {
   [K in keyof HTTPCONFIG[TYPENAME]]: ExtractConfig<HTTPCONFIG[TYPENAME][K]>;
 };
-type ADDHTTPMETHOD = {
-  [K in TYPENAME]: ITEMHTTPCONFIG;
-};
-type MoobiusSDKWithIndex = MoobiusSDK &
-  ADDHTTPMETHOD & {
-    fetch: ReturnType<typeof createFetch>;
-  };
 
-export default function dispatchHttpRequest(this: MoobiusSDK) {
-  const self = this as MoobiusSDKWithIndex;
-  const fetch = createFetch({
+export default function dispatchHttpRequest(this: MoobiusBASIC) {
+  this.fetch = createFetch({
     baseURL: this.config.httpUrl,
   });
-  self.fetch = fetch;
   const _keys = Object.keys(httpConfig) as TYPENAME[];
 
   _keys.forEach((key: TYPENAME) => {
     const subKeys = Object.keys(httpConfig[key]) as Array<
       keyof HTTPCONFIG[TYPENAME]
     >;
-    self[key] = subKeys.reduce((acc: any, methodName) => {
+    this[key] = subKeys.reduce((acc: any, methodName) => {
       const getConfig = httpConfig[key][methodName];
       acc[methodName as keyof HTTPCONFIG[TYPENAME]] = async (
         data: Parameters<typeof getConfig>[0],
@@ -41,9 +32,9 @@ export default function dispatchHttpRequest(this: MoobiusSDK) {
         console.log(config);
         const nextMethod = config?.callback;
         delete config.callback;
-        const result = await fetch(config);
+        const result = await this.fetch(config);
         if (nextMethod) {
-          await nextMethod.call(self, result);
+          await nextMethod.call(this, result);
         }
         return result;
       };

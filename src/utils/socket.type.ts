@@ -15,7 +15,7 @@ type MessageEvent = Record<string, (data: any) => void>;
 export type WsConfigBase<T = Record<string, any>> = {
   type: string;
   request_id: string;
-  user_id: string;
+  user_id?: string;
   access_token?: string;
   auth_origin?: 'cognito' | 'oauth';
   body?: T;
