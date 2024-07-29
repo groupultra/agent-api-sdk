@@ -77,44 +77,38 @@ export const sign_in = (
   },
 });
 
-export const sign_out = (params: {
-  access_token: string;
-}): BASE_HTTP_RESPONSE<{
-  access_token: string;
-}> => ({
-  url: '/auth/sign_out',
-  method: 'POST',
-  data: params,
-  config: {
-    ignoreAuth: true,
-  },
-});
+export const sign_out = () => {
+  const userInfo = storage.get<USER_INFO>('userInfo');
+  const access_token = userInfo?.AccessToken;
+  storage.remove('userInfo');
+  return {
+    url: '/auth/sign_out',
+    method: 'POST',
+    data: {
+      access_token,
+    },
+    config: {
+      ignoreAuth: true,
+    },
+  };
+};
 
-export const refresh = (params: {
-  refresh_token: string;
-  username: string;
-}): BASE_HTTP_RESPONSE<{
-  refresh_token: string;
-  username: string;
-}> => ({
-  url: '/auth/refresh',
-  method: 'POST',
-  data: params,
-  config: {
-    ignoreAuth: true,
-  },
-});
-
-export const confirm_sign_up = (
-  params: SIGN_PARAMS,
-): BASE_HTTP_RESPONSE<SIGN_PARAMS> => ({
-  url: '/auth/confirm_sign_up',
-  method: 'POST',
-  data: params,
-  config: {
-    ignoreAuth: true,
-  },
-});
+export const refresh = () => {
+  const userInfo = storage.get<USER_INFO>('userInfo');
+  const refresh_token = userInfo?.RefreshToken;
+  const username = userInfo?.userInfo?.email;
+  return {
+    url: '/auth/refresh',
+    method: 'POST',
+    data: {
+      refresh_token,
+      username,
+    },
+    config: {
+      ignoreAuth: true,
+    },
+  };
+};
 
 export const resend_confirmation = (
   params: SIGN_PARAMS,
